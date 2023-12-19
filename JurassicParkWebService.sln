@@ -5,6 +5,8 @@ VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JurassicParkWebService", "JurassicParkWebService\JurassicParkWebService.csproj", "{6A419FD1-793F-41A1-9F86-5CFD40C278CA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JurassicParkWebService.Tests", "JurassicParkWebService.Tests\JurassicParkWebService.Tests.csproj", "{B6E7E4AF-7BF1-4BB8-A4C4-698E219FF5E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{6A419FD1-793F-41A1-9F86-5CFD40C278CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A419FD1-793F-41A1-9F86-5CFD40C278CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A419FD1-793F-41A1-9F86-5CFD40C278CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6E7E4AF-7BF1-4BB8-A4C4-698E219FF5E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6E7E4AF-7BF1-4BB8-A4C4-698E219FF5E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6E7E4AF-7BF1-4BB8-A4C4-698E219FF5E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6E7E4AF-7BF1-4BB8-A4C4-698E219FF5E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
