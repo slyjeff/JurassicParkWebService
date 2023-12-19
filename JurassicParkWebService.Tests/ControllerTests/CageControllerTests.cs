@@ -12,7 +12,7 @@ using Moq;
 namespace JurassicParkWebService.Tests.ControllerTests; 
 
 [TestClass]
-public class CageControllerTests {
+public sealed class CageControllerTests {
     private Mock<ICageStore> _mockCageStore = null!;
     private CageController _cageController = null!;
 
@@ -20,7 +20,6 @@ public class CageControllerTests {
     public void Setup() {
         _mockCageStore = new Mock<ICageStore>();
         _mockCageStore.Setup(x => x.Search(It.IsAny<string>())).Returns(new List<Cage>( ));
-
 
         _cageController = new CageController(_mockCageStore.Object);
     }
@@ -117,6 +116,41 @@ public class CageControllerTests {
     }
     #endregion
 
+    #region Get
+
+    [TestMethod]
+    public void GetMustReturnCageById() {
+        //arrange
+        var cage = GenerateRandomCage();
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.Get(cage.Id) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+        Assert.IsTrue(cage.EqualsResource(result.Value as CageResource));
+    }
+
+    [TestMethod]
+    public void GetMustReturnErrorIfNotFound() {
+        //arrange
+        var unknownId = GenerateRandom.Int();
+
+        //act
+        var result = _cageController.Get(unknownId) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Cage not found.", result.Value);
+    }
+
+    #endregion
+
+
     #region Search
     [TestMethod]
     public void SearchWithoutParametersMustReturnAllCages() {
@@ -137,7 +171,7 @@ public class CageControllerTests {
         Assert.IsTrue(mockCages.EqualsResourceList(result.Value));
     }
 
-    private Cage GenerateRandomCage() {
+    private static Cage GenerateRandomCage() {
         var maxCapacity = GenerateRandom.Int(1, 10);
         var powerStatus = GenerateRandom.Int(0, 1) == 1 ? CagePowerStatus.Up : CagePowerStatus.Down;
         var dinosaurCount = powerStatus == CagePowerStatus.Up ? GenerateRandom.Int(0, maxCapacity) : 0;

@@ -8,7 +8,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace JurassicParkWebService.Tests.Extensions; 
 
 internal static class ComparisonExtensions {
-    public static bool EqualsResource(this Cage cage, CageResource cageResource) {
+    public static bool EqualsResource(this Cage cage, CageResource? cageResource) {
+        if (cageResource == null) {
+            return false;
+        }
+
         return cage.Id == cageResource.Id
                && cage.MaxCapacity == cageResource.MaxCapacity
                && cage.DinosaurCount == cageResource.DinosaurCount

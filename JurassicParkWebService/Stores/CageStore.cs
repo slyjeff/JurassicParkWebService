@@ -7,6 +7,7 @@ namespace JurassicParkWebService.Stores;
 public interface ICageStore {
     void Add(Cage cage);
     IList<Cage> Search(string? name);
+    Cage? Get(int cageId);
 }
 
 internal sealed class CageStore : ICageStore {
@@ -15,5 +16,9 @@ internal sealed class CageStore : ICageStore {
 
     public IList<Cage> Search(string? name) {
         return new List<Cage>();
+    }
+
+    public Cage? Get(int cageId) {
+        return null;
     }
 }

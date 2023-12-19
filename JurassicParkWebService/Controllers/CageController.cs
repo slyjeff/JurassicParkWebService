@@ -54,6 +54,18 @@ public sealed class CageController : ControllerBase {
         return null;
     }
 
+    [HttpGet("{cageId}")]
+    public IActionResult Get(int cageId) {
+        var cage = _cageStore.Get(cageId);
+        if (cage == null) {
+            return StatusCode(404, "Cage not found.");
+        }
+
+        var resource = new CageResource(cage);
+
+        return StatusCode(200, resource);
+    }
+
     [HttpGet]
     public IActionResult Search() {
         var resources = _cageStore.Search(null).Select(x => new CageResource(x));
