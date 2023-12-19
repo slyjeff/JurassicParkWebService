@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Resources;
+using JurassicParkWebService.Entities;
 using JurassicParkWebService.Resources;
 using JurassicParkWebService.Stores;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +16,47 @@ public sealed class CageController : ControllerBase {
         _cageStore = cageStore;
     }
 
+    [HttpPost]
+    public IActionResult Add([FromForm] string? cageName, [FromForm] int? maxCapacity) {
+        var validationError = ValidateNewCage(cageName, maxCapacity);
+        if (!string.IsNullOrEmpty(validationError)) {
+            return StatusCode(400, validationError);
+        }
+
+        var newCage = new Cage {
+            Name = cageName!,
+            MaxCapacity = maxCapacity!.Value
+        };
+
+        _cageStore.Add(newCage);
+
+        return StatusCode(200, new CageResource(newCage));
+    }
+
+    private string? ValidateNewCage(string? cageName, int? maxCapacity) {
+        if (string.IsNullOrEmpty(cageName)) {
+            return "cageName must be supplied.";
+        }
+        
+        var existingCage = _cageStore.Search(name: cageName);
+        if (existingCage.Any()) {
+            return "Name already exists.";
+        }
+
+        if (maxCapacity == null) {
+            return "maxCapacity must be supplied.";
+        }
+        
+        if (maxCapacity <= 0) {
+            return "maxCapacity is invalid.";
+        }
+
+        return null;
+    }
+
     [HttpGet]
     public IActionResult Search() {
-        var resources = _cageStore.Search().Select(x => new CageResource(x));
+        var resources = _cageStore.Search(null).Select(x => new CageResource(x));
 
         return StatusCode(200, resources);
     }

@@ -5,11 +5,15 @@ using JurassicParkWebService.Entities;
 namespace JurassicParkWebService.Stores;
 
 public interface ICageStore {
-    IList<Cage> Search();
+    void Add(Cage cage);
+    IList<Cage> Search(string? name);
 }
 
 internal sealed class CageStore : ICageStore {
-    public IList<Cage> Search() {
+    public void Add(Cage cage) {
+    }
+
+    public IList<Cage> Search(string? name) {
         return new List<Cage>();
     }
 }
