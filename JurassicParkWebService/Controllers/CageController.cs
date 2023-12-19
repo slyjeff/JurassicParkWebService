@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Resources;
 using JurassicParkWebService.Entities;
 using JurassicParkWebService.Resources;
 using JurassicParkWebService.Stores;
@@ -18,7 +17,7 @@ public sealed class CageController : ControllerBase {
 
     [HttpPost]
     public IActionResult Add([FromForm] string? cageName, [FromForm] int? maxCapacity) {
-        var validationError = ValidateNewCage(cageName, maxCapacity);
+        var validationError = ValidateCageValues(cageName, maxCapacity);
         if (!string.IsNullOrEmpty(validationError)) {
             return StatusCode(400, validationError);
         }
@@ -33,13 +32,13 @@ public sealed class CageController : ControllerBase {
         return StatusCode(200, new CageResource(newCage));
     }
 
-    private string? ValidateNewCage(string? cageName, int? maxCapacity) {
+    private string? ValidateCageValues(string? cageName, int? maxCapacity, Cage? updateCage = null) {
         if (string.IsNullOrEmpty(cageName)) {
             return "cageName must be supplied.";
         }
         
-        var existingCage = _cageStore.Search(name: cageName);
-        if (existingCage.Any()) {
+        var existingCage = _cageStore.Search(cageName);
+        if (existingCage.Any(x => updateCage == null || x.Id != updateCage.Id)) {
             return "Name already exists.";
         }
 
@@ -51,7 +50,18 @@ public sealed class CageController : ControllerBase {
             return "maxCapacity is invalid.";
         }
 
+        if (updateCage != null && maxCapacity < updateCage.DinosaurCount) {
+            return "maxCapacity must be higher than dinosaurCount.";
+        }
+
         return null;
+    }
+
+    [HttpGet]
+    public IActionResult Search() {
+        var resources = _cageStore.Search(null).Select(x => new CageResource(x));
+
+        return StatusCode(200, resources);
     }
 
     [HttpGet("{cageId}")]
@@ -66,10 +76,23 @@ public sealed class CageController : ControllerBase {
         return StatusCode(200, resource);
     }
 
-    [HttpGet]
-    public IActionResult Search() {
-        var resources = _cageStore.Search(null).Select(x => new CageResource(x));
+    [HttpPut("{cageId}")]
+    public IActionResult Update(int cageId, [FromForm] string? cageName, [FromForm] int? maxCapacity) {
+        var cage = _cageStore.Get(cageId);
+        if (cage == null) {
+            return StatusCode(404, "Cage not found.");
+        }
 
-        return StatusCode(200, resources);
+        var validationError = ValidateCageValues(cageName, maxCapacity, cage);
+        if (!string.IsNullOrEmpty(validationError)) {
+            return StatusCode(400, validationError);
+        }
+
+        cage.Name = cageName!;
+        cage.MaxCapacity = maxCapacity!.Value;
+
+        _cageStore.Update(cage);
+
+        return StatusCode(200, new CageResource(cage));
     }
 }

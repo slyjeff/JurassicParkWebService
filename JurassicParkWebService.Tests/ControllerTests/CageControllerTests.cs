@@ -62,7 +62,7 @@ public sealed class CageControllerTests {
         var maxCapacity = GenerateRandom.Int(1, 10);
 
         //act
-        var result = _cageController.Add(cageName: null, maxCapacity: maxCapacity) as ObjectResult;
+        var result = _cageController.Add(cageName: null, maxCapacity) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);
@@ -79,7 +79,7 @@ public sealed class CageControllerTests {
         _mockCageStore.Setup(x => x.Search(cageName)).Returns(new List<Cage>{GenerateRandomCage()});
 
         //act
-        var result = _cageController.Add(cageName: cageName, maxCapacity: maxCapacity) as ObjectResult;
+        var result = _cageController.Add(cageName, maxCapacity) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);
@@ -93,7 +93,7 @@ public sealed class CageControllerTests {
         var cageName = GenerateRandom.String();
 
         //act
-        var result = _cageController.Add(cageName: cageName, maxCapacity: null) as ObjectResult;
+        var result = _cageController.Add(cageName, maxCapacity: null) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);
@@ -107,7 +107,7 @@ public sealed class CageControllerTests {
         var cageName = GenerateRandom.String();
 
         //act
-        var result = _cageController.Add(cageName: cageName, maxCapacity: 0) as ObjectResult;
+        var result = _cageController.Add(cageName, maxCapacity: 0) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);
@@ -117,7 +117,6 @@ public sealed class CageControllerTests {
     #endregion
 
     #region Get
-
     [TestMethod]
     public void GetMustReturnCageById() {
         //arrange
@@ -146,6 +145,157 @@ public sealed class CageControllerTests {
         Assert.IsNotNull(result);
         Assert.AreEqual(404, result.StatusCode);
         Assert.AreEqual("Cage not found.", result.Value);
+    }
+    #endregion
+
+    #region Update
+    [TestMethod]
+    public void UpdateMustReturnErrorIfNotFound() {
+        //arrange
+        var unknownId = GenerateRandom.Int();
+        var cageName = GenerateRandom.String();
+        var maxCapacity = GenerateRandom.Int(1, 10);
+
+        //act
+        var result = _cageController.Update(unknownId, cageName, maxCapacity) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Cage not found.", result.Value);
+    }
+
+    [TestMethod]
+    public void UpdateMustReturnErrorIfNameNotSupplied() {
+        //arrange
+        var cage = GenerateRandomCage();
+        var maxCapacity = GenerateRandom.Int(1, 10);
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.Update(cage.Id, cageName: null, maxCapacity) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("cageName must be supplied.", result.Value);
+    }
+
+    [TestMethod]
+    public void UpdateMustReturnErrorIfNameAlreadyExists() {
+        //arrange
+        var cage = GenerateRandomCage();
+        var cageName = GenerateRandom.String();
+        var maxCapacity = GenerateRandom.Int(1, 10);
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        _mockCageStore.Setup(x => x.Search(cageName)).Returns(new List<Cage> { cage, GenerateRandomCage() });
+
+        //act
+        var result = _cageController.Update(cage.Id, cageName, maxCapacity) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("Name already exists.", result.Value);
+    }
+
+    [TestMethod]
+    public void UpdateMustNotReturnErrorIfExistingNameIsTheCageBeingUpdated() {
+        //arrange
+        var cage = GenerateRandomCage();
+        var cageName = GenerateRandom.String();
+        var maxCapacity = cage.DinosaurCount + GenerateRandom.Int(0, 5);
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        _mockCageStore.Setup(x => x.Search(cageName)).Returns(new List<Cage> { cage });
+
+        //act
+        var result = _cageController.Update(cage.Id, cageName, maxCapacity) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+    }
+
+    [TestMethod]
+    public void UpdateMustReturnErrorIfMaxCapacityIsNotSupplied() {
+        //arrange
+        var cage = GenerateRandomCage();
+        var cageName = GenerateRandom.String();
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.Update(cage.Id, cageName, maxCapacity: null) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("maxCapacity must be supplied.", result.Value);
+    }
+
+    [TestMethod]
+    public void UpdateMustReturnErrorIfMaxCapacityIsNotGreaterThanZero() {
+        //arrange
+        var cage = GenerateRandomCage();
+        var cageName = GenerateRandom.String();
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.Update(cage.Id, cageName, maxCapacity: 0) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("maxCapacity is invalid.", result.Value);
+    }
+
+    [TestMethod]
+    public void UpdateMustReturnErrorIfMaxCapacityIsSetBelowDinosaurCount() {
+        var cage = GenerateRandomCage();
+        cage.DinosaurCount = GenerateRandom.Int(2, 5);
+        var cageName = GenerateRandom.String();
+        var maxCapacity = cage.DinosaurCount - 1;
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.Update(cage.Id, cageName, maxCapacity) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("maxCapacity must be higher than dinosaurCount.", result.Value);
+    }
+
+    [TestMethod]
+    public void UpdateMustSaveNewValues() {
+        var cage = GenerateRandomCage();
+        var cageName = GenerateRandom.String();
+        var maxCapacity = cage.DinosaurCount + GenerateRandom.Int(0, 5);
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.Update(cage.Id, cageName, maxCapacity) as ObjectResult;
+
+        //assert
+        var expectedCage = new Cage {
+            Id = cage.Id,
+            Name = cageName,
+            MaxCapacity = maxCapacity,
+            PowerStatus = cage.PowerStatus
+        };
+        _mockCageStore.Verify(x => x.Update(It.Is<Cage>(y => expectedCage.Equals(y))), Times.Once());
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+        Assert.IsTrue(cage.EqualsResource(result.Value as CageResource));
     }
 
     #endregion
