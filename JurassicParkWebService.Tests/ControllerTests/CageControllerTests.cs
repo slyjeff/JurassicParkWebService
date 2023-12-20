@@ -221,14 +221,14 @@ public sealed class CageControllerTests {
     public void UpdateMustReturnErrorIfNameNotSupplied() {
         //arrange
         var cage = GenerateRandomCage();
-        var maxCapacity = GenerateRandom.Int(1, 10);
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         //act
         var inboundResource = new InboundCageResource {
             Name = null,
-            MaxCapacity = maxCapacity,
+            MaxCapacity = cage.MaxCapacity,
+            PowerStatus = cage.PowerStatus.ToString()
         };
         var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
 
@@ -243,7 +243,6 @@ public sealed class CageControllerTests {
         //arrange
         var cage = GenerateRandomCage();
         var cageName = GenerateRandom.String();
-        var maxCapacity = GenerateRandom.Int(1, 10);
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -252,7 +251,8 @@ public sealed class CageControllerTests {
         //act
         var inboundResource = new InboundCageResource {
             Name = cageName,
-            MaxCapacity = maxCapacity,
+            MaxCapacity = cage.MaxCapacity,
+            PowerStatus = cage.PowerStatus.ToString()
         };
         var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
 
@@ -267,7 +267,6 @@ public sealed class CageControllerTests {
         //arrange
         var cage = GenerateRandomCage();
         var cageName = GenerateRandom.String();
-        var maxCapacity = cage.DinosaurCount + GenerateRandom.Int(0, 5);
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -276,7 +275,8 @@ public sealed class CageControllerTests {
         //act
         var inboundResource = new InboundCageResource {
             Name = cageName,
-            MaxCapacity = maxCapacity,
+            MaxCapacity = cage.MaxCapacity,
+            PowerStatus = cage.PowerStatus.ToString()
         };
         var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
 
@@ -289,14 +289,14 @@ public sealed class CageControllerTests {
     public void UpdateMustReturnErrorIfMaxCapacityIsNotSupplied() {
         //arrange
         var cage = GenerateRandomCage();
-        var cageName = GenerateRandom.String();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         //act
         var inboundResource = new InboundCageResource {
-            Name = cageName,
+            Name = cage.Name,
             MaxCapacity = null,
+            PowerStatus = cage.PowerStatus.ToString()
         };
         var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
 
@@ -310,14 +310,14 @@ public sealed class CageControllerTests {
     public void UpdateMustReturnErrorIfMaxCapacityIsNotGreaterThanZero() {
         //arrange
         var cage = GenerateRandomCage();
-        var cageName = GenerateRandom.String();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         //act
         var inboundResource = new InboundCageResource {
-            Name = cageName,
+            Name = cage.Name,
             MaxCapacity = 0,
+            PowerStatus = cage.PowerStatus.ToString()
         };
         var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
 
@@ -331,15 +331,15 @@ public sealed class CageControllerTests {
     public void UpdateMustReturnErrorIfMaxCapacityIsSetBelowDinosaurCount() {
         var cage = GenerateRandomCage();
         cage.DinosaurCount = GenerateRandom.Int(2, 5);
-        var cageName = GenerateRandom.String();
         var maxCapacity = cage.DinosaurCount - 1;
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         //act
         var inboundResource = new InboundCageResource {
-            Name = cageName,
+            Name = cage.Name,
             MaxCapacity = maxCapacity,
+            PowerStatus = cage.PowerStatus.ToString()
         };
         var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
 
@@ -350,10 +350,80 @@ public sealed class CageControllerTests {
     }
 
     [TestMethod]
+    public void UpdateMustReturnErrorIfPowerStatusNotSupplied() {
+        //arrange
+        var cage = GenerateRandomCage();
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var inboundResource = new InboundCageResource {
+            Name = cage.Name,
+            MaxCapacity = cage.MaxCapacity,
+            PowerStatus = null
+        };
+        var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("PowerStatus must be supplied.", result.Value);
+    }
+
+    [TestMethod]
+    public void UpdateMustReturnErrorIfPowerStatusInvalid() {
+        //arrange
+        var cage = GenerateRandomCage();
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var inboundResource = new InboundCageResource {
+            Name = cage.Name,
+            MaxCapacity = cage.MaxCapacity,
+            PowerStatus = GenerateRandom.String()
+        };
+        var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("PowerStatus must be 'active' or 'down'.", result.Value);
+    }
+
+    [TestMethod]
+    public void UpdateMustReturnErrorIfPowerStatusIsSetToDownWithDinosaursInCage() {
+        //arrange
+        var cage = GenerateRandomCage();
+        cage.MaxCapacity = 2;
+        cage.DinosaurCount = 1;
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var inboundResource = new InboundCageResource {
+            Name = cage.Name,
+            MaxCapacity = cage.MaxCapacity,
+            PowerStatus = CagePowerStatus.Down.ToString()
+        };
+        var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("PowerStatus cannot be set to 'down' when DinosaurCount > 0.", result.Value);
+    }
+
+    [TestMethod]
     public void UpdateMustSaveNewValues() {
         var cage = GenerateRandomCage();
+        cage.DinosaurCount = 0; //if DinosaurCount isn't zero, setting the PowerStatus to 'down' will return a validation error
+        cage.PowerStatus = GenerateRandom.Int(0, 1) == 1 ? CagePowerStatus.Active : CagePowerStatus.Down;
+        
+        //the new values must be different from the existing values so we can detect changes
         var cageName = GenerateRandom.String();
-        var maxCapacity = cage.DinosaurCount + GenerateRandom.Int(0, 5);
+        var maxCapacity = cage.MaxCapacity + 1;
+        var powerStatus = cage.PowerStatus == CagePowerStatus.Active ? CagePowerStatus.Down : CagePowerStatus.Active;
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -361,6 +431,7 @@ public sealed class CageControllerTests {
         var inboundResource = new InboundCageResource {
             Name = cageName,
             MaxCapacity = maxCapacity,
+            PowerStatus = powerStatus.ToString()
         };
         var result = _cageController.Update(cage.Id, inboundResource) as ObjectResult;
 
@@ -369,7 +440,7 @@ public sealed class CageControllerTests {
             Id = cage.Id,
             Name = cageName,
             MaxCapacity = maxCapacity,
-            PowerStatus = cage.PowerStatus
+            PowerStatus = powerStatus
         };
         _mockCageStore.Verify(x => x.Update(It.Is<Cage>(y => expectedCage.Equals(y))), Times.Once());
 
@@ -438,6 +509,7 @@ public sealed class CageControllerTests {
 
         return new Cage {
             Id = GenerateRandom.Int(),
+            Name = GenerateRandom.String(),
             MaxCapacity = maxCapacity,
             DinosaurCount = dinosaurCount,
             PowerStatus = powerStatus

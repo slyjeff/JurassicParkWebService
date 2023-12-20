@@ -25,7 +25,7 @@ public sealed class CageController : ControllerBase {
         }
 
         var newCage = new Cage {
-            Name = inboundCageResource.Name!,
+            Name = inboundCageResource!.Name!,
             MaxCapacity = inboundCageResource.MaxCapacity!.Value
         };
 
@@ -34,7 +34,7 @@ public sealed class CageController : ControllerBase {
         return StatusCode(200, new OutboundCageResource(newCage));
     }
 
-    private string? ValidateCageValues(InboundCageResource? inboundCageResource, Cage? updateCage = null) {
+    private string? ValidateCageValues(InboundCageResource? inboundCageResource, Cage? cageToUpdate = null) {
         if (inboundCageResource == null) {
             return "Body must be supplied.";
         }
@@ -43,8 +43,8 @@ public sealed class CageController : ControllerBase {
             return "Name must be supplied.";
         }
         
-        var existingCage = _cageStore.Search(inboundCageResource.Name, powerStatus: null);
-        if (existingCage.Any(x => updateCage == null || x.Id != updateCage.Id)) {
+        var cagesWithSameName = _cageStore.Search(inboundCageResource.Name, powerStatus: null);
+        if (cagesWithSameName.Any(x => cageToUpdate == null || x.Id != cageToUpdate.Id)) {
             return "Name already exists.";
         }
 
@@ -56,12 +56,25 @@ public sealed class CageController : ControllerBase {
             return "MaxCapacity is invalid.";
         }
 
-        if (updateCage == null) {
+        if (cageToUpdate == null) {
             return null;
         }
 
-        if (inboundCageResource.MaxCapacity < updateCage.DinosaurCount) {
+        //this is validation that only applies to updates
+        if (inboundCageResource.MaxCapacity < cageToUpdate.DinosaurCount) {
             return "MaxCapacity must be higher than DinosaurCount.";
+        }
+
+        if (string.IsNullOrEmpty(inboundCageResource.PowerStatus)) {
+            return "PowerStatus must be supplied.";
+        }
+
+        if (!Enum.TryParse<CagePowerStatus>(inboundCageResource.PowerStatus, out var powerStatus)) {
+            return "PowerStatus must be 'active' or 'down'.";
+        }
+
+        if (powerStatus == CagePowerStatus.Down && cageToUpdate.DinosaurCount > 0) {
+            return "PowerStatus cannot be set to 'down' when DinosaurCount > 0.";
         }
 
         return null;
@@ -107,8 +120,9 @@ public sealed class CageController : ControllerBase {
             return StatusCode(400, validationError);
         }
 
-        cage.Name = inboundCageResource.Name!;
+        cage.Name = inboundCageResource!.Name!;
         cage.MaxCapacity = inboundCageResource.MaxCapacity!.Value;
+        cage.PowerStatus = Enum.Parse<CagePowerStatus>(inboundCageResource.PowerStatus!);
 
         _cageStore.Update(cage);
 
