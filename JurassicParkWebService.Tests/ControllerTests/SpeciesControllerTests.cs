@@ -15,14 +15,16 @@ namespace JurassicParkWebService.Tests.ControllerTests;
 public sealed class SpeciesControllerTests {
     private Mock<ISpeciesStore> _mockSpeciesStore = null!;
     private SpeciesController _speciesController = null!;
+    private Mock<IDinosaurStore> _mockDinosaurStore = null!;
 
     [TestInitialize]
     public void Setup() {
         _mockSpeciesStore = new Mock<ISpeciesStore>();
+        _mockDinosaurStore = new Mock<IDinosaurStore>();
 
         _mockSpeciesStore.Setup(x => x.Search(It.IsAny<string?>())).Returns(new List<Species>());
 
-        _speciesController = new SpeciesController(_mockSpeciesStore.Object);
+        _speciesController = new SpeciesController(_mockSpeciesStore.Object, _mockDinosaurStore.Object);
     }
 
     #region Add
@@ -197,7 +199,22 @@ public sealed class SpeciesControllerTests {
 
     [TestMethod]
     public void DeleteMustReturnErrorIfDinosaursOfSpeciesExist() {
-        Assert.Fail();
+        //arrange
+        var species = GenerateRandomSpecies();
+        var dinosaursWithSpecies = new List<Dinosaur> { new(), new() };
+
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+        _mockDinosaurStore.Setup(x => x.Search(null, species.Id)).Returns(dinosaursWithSpecies);
+
+        //act
+        var result = _speciesController.Delete(species.Id) as ObjectResult;
+
+        //assert
+        _mockSpeciesStore.Verify(x => x.Delete(species.Id), Times.Never);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("Cannot delete while Dinosaurs of this species exist.", result.Value);
     }
 
     [TestMethod]
@@ -206,6 +223,7 @@ public sealed class SpeciesControllerTests {
         var species = GenerateRandomSpecies();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+        _mockDinosaurStore.Setup(x => x.Search(null, species.Id)).Returns(new List<Dinosaur>());
 
         //act
         var result = _speciesController.Delete(species.Id) as StatusCodeResult;

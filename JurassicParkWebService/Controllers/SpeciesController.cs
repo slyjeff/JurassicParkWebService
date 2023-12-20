@@ -11,9 +11,11 @@ namespace JurassicParkWebService.Controllers;
 [Route("[controller]")]
 public sealed class SpeciesController : ControllerBase {
     private readonly ISpeciesStore _speciesStore;
+    private readonly IDinosaurStore _dinosaurStore;
 
-    public SpeciesController(ISpeciesStore speciesStore) {
+    public SpeciesController(ISpeciesStore speciesStore, IDinosaurStore dinosaurStore) {
         _speciesStore = speciesStore;
+        _dinosaurStore = dinosaurStore;
     }
 
     [HttpPost]
@@ -101,13 +103,14 @@ public sealed class SpeciesController : ControllerBase {
 
     [HttpDelete("{speciesId}")]
     public IActionResult Delete(int speciesId) {
-        var cage = _speciesStore.Get(speciesId);
-        if (cage == null) {
+        var species = _speciesStore.Get(speciesId);
+        if (species == null) {
             return StatusCode(404, "Species not found.");
         }
 
-
-        //todo: don't allow delete if any dinosaurs are assigned to this species
+        if (_dinosaurStore.Search(name: null, species.Id).Any()) {
+            return StatusCode(400, "Cannot delete while Dinosaurs of this species exist.");
+        }
 
         _speciesStore.Delete(speciesId);
 
