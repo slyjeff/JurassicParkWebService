@@ -8,7 +8,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace JurassicParkWebService.Tests.Extensions; 
 
 internal static class ComparisonExtensions {
-    public static bool EqualsResource(this Cage cage, CageResource? cageResource) {
+    public static bool EqualsResource(this Cage cage, OutboundCageResource? cageResource) {
         if (cageResource == null) {
             return false;
         }
@@ -20,7 +20,7 @@ internal static class ComparisonExtensions {
     }
 
     public static bool EqualsResourceList(this IList<Cage> cages, object? value) {
-        if (value is not IEnumerable<CageResource> resources) {
+        if (value is not IEnumerable<OutboundCageResource> resources) {
             return false;
         }
 

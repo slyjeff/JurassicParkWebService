@@ -16,43 +16,52 @@ public sealed class CageController : ControllerBase {
         _cageStore = cageStore;
     }
 
+
     [HttpPost]
-    public IActionResult Add([FromForm] string? cageName, [FromForm] int? maxCapacity) {
-        var validationError = ValidateCageValues(cageName, maxCapacity);
+    public IActionResult Add([FromBody] InboundCageResource? inboundCageResource) {
+        var validationError = ValidateCageValues(inboundCageResource);
         if (!string.IsNullOrEmpty(validationError)) {
             return StatusCode(400, validationError);
         }
 
         var newCage = new Cage {
-            Name = cageName!,
-            MaxCapacity = maxCapacity!.Value
+            Name = inboundCageResource.Name!,
+            MaxCapacity = inboundCageResource.MaxCapacity!.Value
         };
 
         _cageStore.Add(newCage);
 
-        return StatusCode(200, new CageResource(newCage));
+        return StatusCode(200, new OutboundCageResource(newCage));
     }
 
-    private string? ValidateCageValues(string? cageName, int? maxCapacity, Cage? updateCage = null) {
-        if (string.IsNullOrEmpty(cageName)) {
-            return "cageName must be supplied.";
+    private string? ValidateCageValues(InboundCageResource? inboundCageResource, Cage? updateCage = null) {
+        if (inboundCageResource == null) {
+            return "Body must be supplied.";
+        }
+
+        if (string.IsNullOrEmpty(inboundCageResource.Name)) {
+            return "Name must be supplied.";
         }
         
-        var existingCage = _cageStore.Search(cageName, powerStatus: null);
+        var existingCage = _cageStore.Search(inboundCageResource.Name, powerStatus: null);
         if (existingCage.Any(x => updateCage == null || x.Id != updateCage.Id)) {
             return "Name already exists.";
         }
 
-        if (maxCapacity == null) {
-            return "maxCapacity must be supplied.";
+        if (inboundCageResource.MaxCapacity == null) {
+            return "MaxCapacity must be supplied.";
         }
         
-        if (maxCapacity <= 0) {
-            return "maxCapacity is invalid.";
+        if (inboundCageResource.MaxCapacity <= 0) {
+            return "MaxCapacity is invalid.";
         }
 
-        if (updateCage != null && maxCapacity < updateCage.DinosaurCount) {
-            return "maxCapacity must be higher than dinosaurCount.";
+        if (updateCage == null) {
+            return null;
+        }
+
+        if (inboundCageResource.MaxCapacity < updateCage.DinosaurCount) {
+            return "MaxCapacity must be higher than DinosaurCount.";
         }
 
         return null;
@@ -63,13 +72,13 @@ public sealed class CageController : ControllerBase {
         CagePowerStatus? powerStatusValue = null;
         if (powerStatus != null) {
             if (!Enum.TryParse<CagePowerStatus>(powerStatus, out var parsedPowerStatusValue)) {
-                return StatusCode(400, "powerStatus must be 'active' or 'down'.");
+                return StatusCode(400, "PowerStatus must be 'active' or 'down'.");
             }
 
             powerStatusValue = parsedPowerStatusValue;
         }
 
-        var resources = _cageStore.Search(cageName, powerStatusValue).Select(x => new CageResource(x));
+        var resources = _cageStore.Search(cageName, powerStatusValue).Select(x => new OutboundCageResource(x));
 
         return StatusCode(200, resources);
     }
@@ -81,28 +90,28 @@ public sealed class CageController : ControllerBase {
             return StatusCode(404, "Cage not found.");
         }
 
-        var resource = new CageResource(cage);
+        var resource = new OutboundCageResource(cage);
 
         return StatusCode(200, resource);
     }
 
     [HttpPut("{cageId}")]
-    public IActionResult Update(int cageId, [FromForm] string? cageName, [FromForm] int? maxCapacity) {
+    public IActionResult Update(int cageId, [FromBody] InboundCageResource? inboundCageResource) {
         var cage = _cageStore.Get(cageId);
         if (cage == null) {
             return StatusCode(404, "Cage not found.");
         }
 
-        var validationError = ValidateCageValues(cageName, maxCapacity, cage);
+        var validationError = ValidateCageValues(inboundCageResource, cage);
         if (!string.IsNullOrEmpty(validationError)) {
             return StatusCode(400, validationError);
         }
 
-        cage.Name = cageName!;
-        cage.MaxCapacity = maxCapacity!.Value;
+        cage.Name = inboundCageResource.Name!;
+        cage.MaxCapacity = inboundCageResource.MaxCapacity!.Value;
 
         _cageStore.Update(cage);
 
-        return StatusCode(200, new CageResource(cage));
+        return StatusCode(200, new OutboundCageResource(cage));
     }
 }
