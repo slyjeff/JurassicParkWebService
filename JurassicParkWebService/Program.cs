@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTransient<ICageStore, CageStore>();
+builder.Services
+    .AddTransient<ICageStore, CageStore>()
+    .AddTransient<ISpeciesStore, SpeciesStore>();
 
 builder.Services.AddControllers();
 
