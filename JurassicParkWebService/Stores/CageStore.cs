@@ -9,6 +9,7 @@ public interface ICageStore {
     void Update(Cage cage);
     IList<Cage> Search(string? name, CagePowerStatus? powerStatus);
     Cage? Get(int cageId);
+    void Delete(int cageId);
 }
 
 internal sealed class CageStore : ICageStore {
@@ -25,5 +26,8 @@ internal sealed class CageStore : ICageStore {
 
     public Cage? Get(int cageId) {
         return null;
+    }
+
+    public void Delete(int cageId) {
     }
 }

@@ -180,6 +180,61 @@ public sealed class CageControllerTests {
     }
     #endregion
 
+    #region Delete
+
+    [TestMethod]
+    public void DeleteMustReturnErrorIfNotFound() {
+        //arrange
+        var unknownId = GenerateRandom.Int();
+
+        //act
+        var result = _cageController.Delete(unknownId) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Cage not found.", result.Value);
+    }
+
+    [TestMethod]
+    public void DeleteMustReturnErrorIfDinosaurCountIsGreaterThanZero() {
+        //arrange
+        var cage = GenerateRandomCage();
+        cage.DinosaurCount = 1;
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.Delete(cage.Id) as ObjectResult;
+
+        //assert
+        _mockCageStore.Verify(x => x.Delete(cage.Id), Times.Never);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("Cannot delete cage if DinosaurCount > 0.", result.Value);
+    }
+
+    [TestMethod]
+    public void GetMustCallStore() {
+        //arrange
+        var cage = GenerateRandomCage();
+        cage.DinosaurCount = 0;
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.Delete(cage.Id) as StatusCodeResult;
+
+        //assert
+        _mockCageStore.Verify(x => x.Delete(cage.Id), Times.Once);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+    }
+
+    #endregion
+
     #region Update
     [TestMethod]
     public void UpdateMustReturnErrorIfNotFound() {
@@ -195,7 +250,7 @@ public sealed class CageControllerTests {
         };
         var result = _cageController.Update(unknownId, inboundResource) as ObjectResult;
 
-        //arrange
+        //assert
         Assert.IsNotNull(result);
         Assert.AreEqual(404, result.StatusCode);
         Assert.AreEqual("Cage not found.", result.Value);

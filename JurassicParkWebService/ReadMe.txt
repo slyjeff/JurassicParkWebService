@@ -16,7 +16,11 @@ I do not have unit tests around the database logic. These would more properly be
 if the database layer is well seperated, it is better not to use unit tests for automation, as they have extenral dependencies. Additionally,
 Usually in C# I'd use NHibernate or another ORM rather than ADO.
 
+On create, power status is not passed in- I am intentionall setting it to active. Without it being specified in the requeirements, I made
+a judgement called, but I wanted to note that this intentional (that is, passing in a value will be ignored).
+
 Things to Add:
+*Exception catching/error handling
 *Versioning on database objects for concurrecy
 *Authorization/Authentication
 *Logging

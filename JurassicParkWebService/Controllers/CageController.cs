@@ -128,4 +128,20 @@ public sealed class CageController : ControllerBase {
 
         return StatusCode(200, new OutboundCageResource(cage));
     }
+
+    [HttpDelete("{cageId}")]
+    public IActionResult Delete(int cageId) {
+        var cage = _cageStore.Get(cageId);
+        if (cage == null) {
+            return StatusCode(404, "Cage not found.");
+        }
+
+        if (cage.DinosaurCount > 0) {
+            return StatusCode(400, "Cannot delete cage if DinosaurCount > 0.");
+        }
+
+        _cageStore.Delete(cageId);
+
+        return StatusCode(200);
+    }
 }
