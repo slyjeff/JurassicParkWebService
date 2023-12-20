@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using JurassicParkWebService.Entities;
 using JurassicParkWebService.Resources;
@@ -37,7 +38,7 @@ public sealed class CageController : ControllerBase {
             return "cageName must be supplied.";
         }
         
-        var existingCage = _cageStore.Search(cageName);
+        var existingCage = _cageStore.Search(cageName, powerStatus: null);
         if (existingCage.Any(x => updateCage == null || x.Id != updateCage.Id)) {
             return "Name already exists.";
         }
@@ -58,8 +59,17 @@ public sealed class CageController : ControllerBase {
     }
 
     [HttpGet]
-    public IActionResult Search() {
-        var resources = _cageStore.Search(null).Select(x => new CageResource(x));
+    public IActionResult Search([FromQuery] string? cageName, [FromQuery] string? powerStatus) {
+        CagePowerStatus? powerStatusValue = null;
+        if (powerStatus != null) {
+            if (!Enum.TryParse<CagePowerStatus>(powerStatus, out var parsedPowerStatusValue)) {
+                return StatusCode(400, "powerStatus must be 'active' or 'down'.");
+            }
+
+            powerStatusValue = parsedPowerStatusValue;
+        }
+
+        var resources = _cageStore.Search(cageName, powerStatusValue).Select(x => new CageResource(x));
 
         return StatusCode(200, resources);
     }
