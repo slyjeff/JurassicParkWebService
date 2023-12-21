@@ -35,11 +35,6 @@ Things to Add:
 
 --------------------
 
-TODO: Handle Assigning/removing Dinosaures to/from cages
-TODO: Handle listing Dinosaurs in a cage
-
---------------------
-
 Endpoints:
 
 /cage
@@ -59,8 +54,8 @@ POST: Add a cage
 /dinosaur
   GET: List of all dinosaures in a cage
 /dinosaur/{dinosaurId} 
-  PUT: Add dinosaure to cage
-  DELETE: Remove dinosaure from cage
+  PUT: Add dinosaur to cage
+  DELETE: Remove dinosaur from cage
 
 /species
 GET: List all Species

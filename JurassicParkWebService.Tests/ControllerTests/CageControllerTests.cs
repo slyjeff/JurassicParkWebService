@@ -25,7 +25,7 @@ public sealed class CageControllerTests {
         _mockCageStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<CagePowerStatus?>())).Returns(new List<Cage>( ));
 
         _mockDinosaurStore = new Mock<IDinosaurStore>();
-        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>())).Returns(new List<Dinosaur>());
+        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<bool?>())).Returns(new List<Dinosaur>());
 
         _mockSpeciesStore = new Mock<ISpeciesStore>();
 
@@ -212,7 +212,7 @@ public sealed class CageControllerTests {
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         var dinosaursInCage = new List<Dinosaur> { new() };
-        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id)).Returns(dinosaursInCage);
+        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id, It.IsAny<bool?>())).Returns(dinosaursInCage);
 
         //act
         var result = _cageController.Delete(cage.Id) as ObjectResult;
@@ -401,7 +401,7 @@ public sealed class CageControllerTests {
 
         const int maxCapacity = 2;
         var dinosaursInCage = new List<Dinosaur> { new(), new(), new() };
-        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id)).Returns(dinosaursInCage);
+        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id, It.IsAny<bool?>())).Returns(dinosaursInCage);
 
         //act
         var inboundResource = new InboundCageResource {
@@ -467,7 +467,7 @@ public sealed class CageControllerTests {
         cage.MaxCapacity = 2;
 
         var dinosaursInCage = new List<Dinosaur> { new() };
-        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id)).Returns(dinosaursInCage);
+        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id, It.IsAny<bool?>())).Returns(dinosaursInCage);
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -605,7 +605,7 @@ public sealed class CageControllerTests {
             mockDinosaurs.Add(mockDinosaur);
         }
 
-        _mockDinosaurStore.Setup(x => x.Search(null, null, cageId)).Returns(mockDinosaurs);
+        _mockDinosaurStore.Setup(x => x.Search(null, null, cageId, null)).Returns(mockDinosaurs);
 
         //act
         var result = _cageController.GetDinosaurs(cageId) as ObjectResult;
@@ -615,5 +615,217 @@ public sealed class CageControllerTests {
         Assert.AreEqual(200, result.StatusCode);
         Assert.IsTrue(mockDinosaurs.EqualsResourceList(result.Value, mockSpecies));
     }
+    #endregion
+
+    #region AddDinosaur
+    [TestMethod]
+    public void AddDinosaursMustReturnErrorIfCageNotFound() {
+        //arrange
+        var unknownId = GenerateRandom.Int();
+        var dinosaur = GenerateRandom.Dinosaur();
+
+        //act
+        var result = _cageController.AddDinosaur(unknownId, dinosaur.Id) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Cage not found.", result.Value);
+    }
+
+    [TestMethod]
+    public void AddDinosaurMustReturnErrorIfDinosaurNotFound() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        var unknownId = GenerateRandom.Int();
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.AddDinosaur(cage.Id, unknownId) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Dinosaur not found.", result.Value);
+    }
+
+    [TestMethod]
+    public void AddDinosaurMustReturnSuccessIfAlreadyInCage() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var species = GenerateRandom.Species();
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+
+        var dinosaur = GenerateRandom.Dinosaur();
+        dinosaur.SpeciesId = species.Id;
+        dinosaur.CageId = cage.Id;
+        _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
+
+        //act
+        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as ObjectResult;
+
+        //arrange
+        _mockDinosaurStore.Verify(x => x.Update(It.IsAny<Dinosaur>()), Times.Never);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+        Assert.IsTrue(dinosaur.EqualsResource(result.Value as OutboundDinosaurResource, species));
+    }
+
+    [TestMethod]
+    public void AddDinosaurMustUpdateIfNotAlreadyInCage() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var species = GenerateRandom.Species();
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+
+        var dinosaur = GenerateRandom.Dinosaur();
+        dinosaur.SpeciesId = species.Id;
+        _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
+
+        //act
+        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as ObjectResult;
+
+        //arrange
+        _mockDinosaurStore.Verify(x => x.Update(It.Is<Dinosaur>(y => y == dinosaur && dinosaur.CageId == cage.Id)), Times.Once);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+        Assert.IsTrue(dinosaur.EqualsResource(result.Value as OutboundDinosaurResource, species));
+    }
+
+    [TestMethod]
+    public void AddCarnivoreMustReturnErrorIfHerbivoreAlreadyInCage() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var species = GenerateRandom.Species();
+        species.SpeciesType = SpeciesType.Carnivore;
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+
+        var dinosaur = GenerateRandom.Dinosaur();
+        dinosaur.SpeciesId = species.Id;
+        _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
+
+        _mockDinosaurStore.Setup(x => x.Search(null, null, cage.Id, false)).Returns(new List<Dinosaur> { new() });
+
+        //act
+        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as ObjectResult;
+
+        //arrange
+        _mockDinosaurStore.Verify(x => x.Update(It.Is<Dinosaur>(y => y == dinosaur && dinosaur.CageId == cage.Id)), Times.Never);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("Cannot put a carnivore and a herbivore in the same cage.", result.Value);
+    }
+
+    [TestMethod]
+    public void AddHerbivoreMustReturnErrorIfCarnivoreAlreadyInCage() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var species = GenerateRandom.Species();
+        species.SpeciesType = SpeciesType.Herbivore;
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+
+        var dinosaur = GenerateRandom.Dinosaur();
+        dinosaur.SpeciesId = species.Id;
+        _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
+
+        _mockDinosaurStore.Setup(x => x.Search(null, null, cage.Id, true)).Returns(new List<Dinosaur> { new() });
+
+        //act
+        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as ObjectResult;
+
+        //arrange
+        _mockDinosaurStore.Verify(x => x.Update(It.Is<Dinosaur>(y => y == dinosaur && dinosaur.CageId == cage.Id)), Times.Never);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("Cannot put a carnivore and a herbivore in the same cage.", result.Value);
+    }
+    #endregion
+
+    #region RemoveDinosaur
+    [TestMethod]
+    public void RemoveDinosaursMustReturnErrorIfCageNotFound() {
+        //arrange
+        var unknownId = GenerateRandom.Int();
+        var dinosaur = GenerateRandom.Dinosaur();
+
+        //act
+        var result = _cageController.RemoveDinosaur(unknownId, dinosaur.Id) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Cage not found.", result.Value);
+    }
+
+    [TestMethod]
+    public void RemoveDinosaurMustReturnErrorIfDinosaurNotFound() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        var unknownId = GenerateRandom.Int();
+
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        //act
+        var result = _cageController.RemoveDinosaur(cage.Id, unknownId) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Dinosaur not found.", result.Value);
+    }
+
+    [TestMethod]
+    public void RemoveDinosaursMustNotUpdateIfAlreadyRemoved() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var dinosaur = GenerateRandom.Dinosaur();
+        dinosaur.CageId = null;
+        _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
+
+        //act
+        var result = _cageController.RemoveDinosaur(cage.Id, dinosaur.Id) as StatusCodeResult;
+
+        //arrange
+        _mockDinosaurStore.Verify(x => x.Update(It.IsAny<Dinosaur>()), Times.Never);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+    }
+
+    [TestMethod]
+    public void RemoveDinosaursMustSetCageToNullIfInCage() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var dinosaur = GenerateRandom.Dinosaur();
+        dinosaur.CageId = cage.Id;
+        _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
+
+        //act
+        var result = _cageController.RemoveDinosaur(cage.Id, dinosaur.Id) as StatusCodeResult;
+
+        //arrange
+        _mockDinosaurStore.Verify(x => x.Update(It.Is<Dinosaur>(y => y == dinosaur && dinosaur.CageId == null)), Times.Once);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+    }
+
     #endregion
 }

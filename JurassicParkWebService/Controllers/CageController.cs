@@ -49,6 +49,53 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
         return StatusCode(200, resources);
     }
 
+    [HttpPut("{cageId:int}/dinosaurs/{dinosaurId:int}")]
+    public IActionResult AddDinosaur(int cageId, int dinosaurId) {
+        var cage = _cageStore.Get(cageId);
+        if (cage == null) {
+            return StatusCode(404, "Cage not found.");
+        }
+
+        var dinosaur = _dinosaurStore.Get(dinosaurId);
+        if (dinosaur == null) {
+            return StatusCode(404, "Dinosaur not found.");
+        }
+
+        var species = _speciesStore.Get(dinosaur.SpeciesId);
+
+        if (dinosaur.CageId != cageId) {
+            var searchForCarnivoresInCage = species!.SpeciesType != SpeciesType.Carnivore;
+            if (_dinosaurStore.Search(cageId: cageId, isCarnivore: searchForCarnivoresInCage).Any()) {
+                return StatusCode(400, "Cannot put a carnivore and a herbivore in the same cage.");
+            }
+
+            dinosaur.CageId = cageId;
+            _dinosaurStore.Update(dinosaur);
+        }
+
+        return StatusCode(200, new OutboundDinosaurResource(dinosaur, species!));
+    }
+
+    [HttpDelete("{cageId:int}/dinosaurs/{dinosaurId:int}")]
+    public IActionResult RemoveDinosaur(int cageId, int dinosaurId) {
+        var cage = _cageStore.Get(cageId);
+        if (cage == null) {
+            return StatusCode(404, "Cage not found.");
+        }
+
+        var dinosaur = _dinosaurStore.Get(dinosaurId);
+        if (dinosaur == null) {
+            return StatusCode(404, "Dinosaur not found.");
+        }
+
+        if (dinosaur.CageId == cageId) {
+            dinosaur.CageId = null;
+            _dinosaurStore.Update(dinosaur);
+        }
+
+        return StatusCode(200);
+    }
+
     private OutboundDinosaurResource CreateOutboundDinosaurResource(Dinosaur dinosaur) {
         var species = _speciesStore.Get(dinosaur.SpeciesId);
         return new OutboundDinosaurResource(dinosaur, species!);
