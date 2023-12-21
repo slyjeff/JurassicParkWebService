@@ -9,40 +9,51 @@ namespace JurassicParkWebService.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public sealed class CageController : ControllerBase {
+public sealed class CageController : EntityController<Cage, InboundCageResource, OutboundCageResource> {
     private readonly ICageStore _cageStore;
 
-    public CageController(ICageStore cageStore) {
+    public CageController(ICageStore cageStore) : base(cageStore) {
         _cageStore = cageStore;
     }
 
+    [HttpGet]
+    public IActionResult Search([FromQuery] string? cageName, [FromQuery] string? powerStatus) {
+        CagePowerStatus? powerStatusValue = null;
+        if (powerStatus != null) {
+            if (!Enum.TryParse<CagePowerStatus>(powerStatus, out var parsedPowerStatusValue)) {
+                return StatusCode(400, "PowerStatus must be 'active' or 'down'.");
+            }
 
-    [HttpPost]
-    public IActionResult Add([FromBody] InboundCageResource? inboundCageResource) {
-        var validationError = ValidateCageValues(inboundCageResource);
-        if (!string.IsNullOrEmpty(validationError)) {
-            return StatusCode(400, validationError);
+            powerStatusValue = parsedPowerStatusValue;
         }
 
-        var newCage = new Cage {
-            Name = inboundCageResource!.Name!,
-            MaxCapacity = inboundCageResource.MaxCapacity!.Value
-        };
+        var resources = _cageStore.Search(cageName, powerStatusValue).Select(x => new OutboundCageResource(x));
 
-        _cageStore.Add(newCage);
-
-        return StatusCode(200, new OutboundCageResource(newCage));
+        return StatusCode(200, resources);
     }
 
-    private string? ValidateCageValues(InboundCageResource? inboundCageResource, Cage? cageToUpdate = null) {
-        if (inboundCageResource == null) {
-            return "Body must be supplied.";
-        }
+    protected override Cage CreateFromInboundResource(InboundCageResource inboundResource) {
+        return new Cage {
+            Name = inboundResource.Name!,
+            MaxCapacity = inboundResource.MaxCapacity!.Value
+        };
+    }
 
+    protected override void UpdateFromInboundResource(Cage cage, InboundCageResource inboundResource) {
+        cage.Name = inboundResource.Name!;
+        cage.MaxCapacity = inboundResource.MaxCapacity!.Value;
+        cage.PowerStatus = Enum.Parse<CagePowerStatus>(inboundResource.PowerStatus!);
+    }
+
+    protected override OutboundCageResource CreateOutboundResource(Cage cage) {
+        return new OutboundCageResource(cage);
+    }
+
+    protected override string? ValidateInboundEntity(InboundCageResource inboundCageResource, Cage? cageToUpdate = null) {
         if (string.IsNullOrEmpty(inboundCageResource.Name)) {
             return "Name must be supplied.";
         }
-        
+
         var cagesWithSameName = _cageStore.Search(inboundCageResource.Name, powerStatus: null);
         if (cagesWithSameName.Any(x => cageToUpdate == null || x.Id != cageToUpdate.Id)) {
             return "Name already exists.";
@@ -51,7 +62,7 @@ public sealed class CageController : ControllerBase {
         if (inboundCageResource.MaxCapacity == null) {
             return "MaxCapacity must be supplied.";
         }
-        
+
         if (inboundCageResource.MaxCapacity <= 0) {
             return "MaxCapacity is invalid.";
         }
@@ -80,68 +91,11 @@ public sealed class CageController : ControllerBase {
         return null;
     }
 
-    [HttpGet]
-    public IActionResult Search([FromQuery] string? cageName, [FromQuery] string? powerStatus) {
-        CagePowerStatus? powerStatusValue = null;
-        if (powerStatus != null) {
-            if (!Enum.TryParse<CagePowerStatus>(powerStatus, out var parsedPowerStatusValue)) {
-                return StatusCode(400, "PowerStatus must be 'active' or 'down'.");
-            }
-
-            powerStatusValue = parsedPowerStatusValue;
+    protected override string? ValidateDeleteEntity(Cage cageToDelete) {
+        if (cageToDelete.DinosaurCount > 0) {
+            return "Cannot delete cage if DinosaurCount > 0.";
         }
 
-        var resources = _cageStore.Search(cageName, powerStatusValue).Select(x => new OutboundCageResource(x));
-
-        return StatusCode(200, resources);
-    }
-
-    [HttpGet("{cageId}")]
-    public IActionResult Get(int cageId) {
-        var cage = _cageStore.Get(cageId);
-        if (cage == null) {
-            return StatusCode(404, "Cage not found.");
-        }
-
-        var resource = new OutboundCageResource(cage);
-
-        return StatusCode(200, resource);
-    }
-
-    [HttpPut("{cageId}")]
-    public IActionResult Update(int cageId, [FromBody] InboundCageResource? inboundCageResource) {
-        var cage = _cageStore.Get(cageId);
-        if (cage == null) {
-            return StatusCode(404, "Cage not found.");
-        }
-
-        var validationError = ValidateCageValues(inboundCageResource, cage);
-        if (!string.IsNullOrEmpty(validationError)) {
-            return StatusCode(400, validationError);
-        }
-
-        cage.Name = inboundCageResource!.Name!;
-        cage.MaxCapacity = inboundCageResource.MaxCapacity!.Value;
-        cage.PowerStatus = Enum.Parse<CagePowerStatus>(inboundCageResource.PowerStatus!);
-
-        _cageStore.Update(cage);
-
-        return StatusCode(200, new OutboundCageResource(cage));
-    }
-
-    [HttpDelete("{cageId}")]
-    public IActionResult Delete(int cageId) {
-        var cage = _cageStore.Get(cageId);
-        if (cage == null) {
-            return StatusCode(404, "Cage not found.");
-        }
-
-        if (cage.DinosaurCount > 0) {
-            return StatusCode(400, "Cannot delete cage if DinosaurCount > 0.");
-        }
-
-        _cageStore.Delete(cageId);
-
-        return StatusCode(200);
+        return null;
     }
 }

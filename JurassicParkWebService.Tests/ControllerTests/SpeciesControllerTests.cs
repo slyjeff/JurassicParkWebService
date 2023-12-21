@@ -65,7 +65,7 @@ public sealed class SpeciesControllerTests {
     public void AddMustReturnErrorIfBodyIsNotSupplied() {
         //arrange
         //act
-        var result = _speciesController.Add(inboundSpeciesResource: null) as ObjectResult;
+        var result = _speciesController.Add(inboundResource: null) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);
@@ -266,7 +266,7 @@ public sealed class SpeciesControllerTests {
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
         //act
-        var result = _speciesController.Update(species.Id, inboundSpeciesResource: null) as ObjectResult;
+        var result = _speciesController.Update(species.Id, inboundResource: null) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);

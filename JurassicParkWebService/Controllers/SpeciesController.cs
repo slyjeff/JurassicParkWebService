@@ -9,37 +9,31 @@ namespace JurassicParkWebService.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public sealed class SpeciesController : ControllerBase {
+public sealed class SpeciesController : EntityController<Species, InboundSpeciesResource, OutboundSpeciesResource> {
     private readonly ISpeciesStore _speciesStore;
     private readonly IDinosaurStore _dinosaurStore;
 
-    public SpeciesController(ISpeciesStore speciesStore, IDinosaurStore dinosaurStore) {
+    public SpeciesController(ISpeciesStore speciesStore, IDinosaurStore dinosaurStore) : base (speciesStore) {
         _speciesStore = speciesStore;
         _dinosaurStore = dinosaurStore;
     }
 
-    [HttpPost]
-    public IActionResult Add([FromBody] InboundSpeciesResource? inboundSpeciesResource) {
-        var validationError = ValidateSpeciesValues(inboundSpeciesResource);
-        if (!string.IsNullOrEmpty(validationError)) {
-            return StatusCode(400, validationError);
-        }
-
-        var newSpecies = new Species {
-            Name = inboundSpeciesResource!.Name!,
-            SpeciesType = Enum.Parse<SpeciesType>(inboundSpeciesResource.SpeciesType!) 
+    protected override Species CreateFromInboundResource(InboundSpeciesResource inboundResource) {
+        return new Species {
+            Name = inboundResource.Name!,
+            SpeciesType = Enum.Parse<SpeciesType>(inboundResource.SpeciesType!)
         };
-
-        _speciesStore.Add(newSpecies);
-
-        return StatusCode(200, new OutboundSpeciesResource(newSpecies));
     }
 
-    private string? ValidateSpeciesValues(InboundSpeciesResource? inboundSpeciesResource, Species? speciesToUpdate = null) {
-        if (inboundSpeciesResource == null) {
-            return "Body must be supplied.";
-        }
+    protected override OutboundSpeciesResource CreateOutboundResource(Species species) {
+        return new OutboundSpeciesResource(species);
+    }
 
+    protected override void UpdateFromInboundResource(Species species, InboundSpeciesResource inboundResource) {
+        species.Name = inboundResource.Name!;
+    }
+
+    protected override string? ValidateInboundEntity(InboundSpeciesResource inboundSpeciesResource, Species? speciesToUpdate = null) {
         if (string.IsNullOrEmpty(inboundSpeciesResource.Name)) {
             return "Name must be supplied.";
         }
@@ -70,50 +64,11 @@ public sealed class SpeciesController : ControllerBase {
         return null;
     }
 
-    [HttpGet("{speciesId}")]
-    public IActionResult Get(int speciesId) {
-        var species = _speciesStore.Get(speciesId);
-        if (species == null) {
-            return StatusCode(404, "Species not found.");
+    protected override string? ValidateDeleteEntity(Species speciesToDelete) {
+        if (_dinosaurStore.Search(name: null, speciesToDelete.Id).Any()) {
+            return "Cannot delete while Dinosaurs of this species exist.";
         }
 
-        var resource = new OutboundSpeciesResource(species);
-
-        return StatusCode(200, resource);
-    }
-
-    [HttpPut("{speciesId}")]
-    public IActionResult Update(int speciesId, [FromBody] InboundSpeciesResource? inboundSpeciesResource) {
-        var species = _speciesStore.Get(speciesId);
-        if (species == null) {
-            return StatusCode(404, "Species not found.");
-        }
-
-        var validationError = ValidateSpeciesValues(inboundSpeciesResource, species);
-        if (!string.IsNullOrEmpty(validationError)) {
-            return StatusCode(400, validationError);
-        }
-
-        species.Name = inboundSpeciesResource!.Name!;
-
-        _speciesStore.Update(species);
-
-        return StatusCode(200, new OutboundSpeciesResource(species));
-    }
-
-    [HttpDelete("{speciesId}")]
-    public IActionResult Delete(int speciesId) {
-        var species = _speciesStore.Get(speciesId);
-        if (species == null) {
-            return StatusCode(404, "Species not found.");
-        }
-
-        if (_dinosaurStore.Search(name: null, species.Id).Any()) {
-            return StatusCode(400, "Cannot delete while Dinosaurs of this species exist.");
-        }
-
-        _speciesStore.Delete(speciesId);
-
-        return StatusCode(200);
+        return null;
     }
 }

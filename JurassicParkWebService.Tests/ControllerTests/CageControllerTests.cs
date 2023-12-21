@@ -64,7 +64,7 @@ public sealed class CageControllerTests {
     public void AddMustReturnErrorIfBodyIsNotSupplied() {
         //arrange
         //act
-        var result = _cageController.Add(inboundCageResource: null) as ObjectResult;
+        var result = _cageController.Add(inboundResource: null) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);
@@ -264,7 +264,7 @@ public sealed class CageControllerTests {
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         //act
-        var result = _cageController.Update(cage.Id, inboundCageResource: null) as ObjectResult;
+        var result = _cageController.Update(cage.Id, inboundResource: null) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);
