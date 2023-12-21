@@ -41,4 +41,14 @@ internal static class ComparisonExtensions {
             && species.Name == speciesResource.Name
             && species.SpeciesType.ToString() == speciesResource.SpeciesType;
     }
+
+    public static bool EqualsResource(this Dinosaur dinosaur, OutboundDinosaurResource? dinosaurResource) {
+        if (dinosaurResource == null) {
+            return false;
+        }
+
+        return dinosaur.Id == dinosaurResource.Id
+            && dinosaur.Name == dinosaurResource.Name
+            && dinosaur.SpeciesId == dinosaurResource.SpeciesId;
+    }
 }

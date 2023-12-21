@@ -222,7 +222,7 @@ public sealed class CageControllerTests {
     }
 
     [TestMethod]
-    public void GetMustCallStore() {
+    public void DeleteMustCallStore() {
         //arrange
         var cage = GenerateRandomCage();
 

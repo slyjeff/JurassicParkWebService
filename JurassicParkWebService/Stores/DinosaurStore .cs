@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace JurassicParkWebService.Stores;
 
 public interface IDinosaurStore : IStore<Dinosaur> {
-    IList<Dinosaur> Search(string? name, int? speciesId, int? cageId);
+    IList<Dinosaur> Search(string? name = null, int? speciesId = null, int? cageId = null);
 }
 
 internal sealed class DinosaurStore : Store<Dinosaur>, IDinosaurStore {

@@ -16,14 +16,22 @@ I do not have unit tests around the database logic. These would more properly be
 if the database layer is well seperated, it is better not to use unit tests for automation, as they have extenral dependencies. Additionally,
 Usually in C# I'd use NHibernate or another ORM rather than ADO.
 
-On create, power status is not passed in- I am intentionall setting it to active. Without it being specified in the requeirements, I made
+On create, power status is not passed in- I am intentionally setting it to active. Without it being specified in the requeirements, I made
 a judgement called, but I wanted to note that this intentional (that is, passing in a value will be ignored).
+
+I did not allowed the editing of Species.SpeciesType once the record was created to avoid handling the complexity of the logic of Dinosaurs
+in cages no longer meeting the Carnivore/Herbivore requirements. In real life, this would be a discussion, but I decided to keep the scope limited.
+
+I did not allowed the editing of Dinosaure.SpeciesId if the dinosaur is in a cage to avoid handling the complexity of the logic of Dinosaurs
+in cages no longer meeting the Carnivore/Herbivore requirements. In real life, this would be a discussion, but I decided to keep the scope limited.
+
 
 Things to Add:
 *Exception catching/error handling
 *Versioning on database objects for concurrecy
 *Authorization/Authentication
 *Logging
+*Versioning for the API
 
 --------------------
 
@@ -53,18 +61,17 @@ POST: Add a Species
 /{speciesId} GET: Get a single species
 /{speciesId} PUT: Update a Species
   *Name
-  *Herbivore/Carnivore
 /{speciesId} DELETE: Remove a species
 
 /dinosaur
-GET: Search for Dinosaures
+GET: Search for Dinosaurs
   *Name
   *Species
-POST: Add a Species
+POST: Add a Dinosaur
   *Name
   *Herbivore/Carnivore
-/{dinosaurId} GGET: Get a single species
-/{dinosaurId} PUT: Update a Species
+/{dinosaurId} GET: Get a single Dinosaur
+/{dinosaurId} PUT: Update a Dinosaure
   *Name
-  *Herbivore/Carnivore
+  *Species
 /{dinosaurId} DELETE: Remove a dinosaur

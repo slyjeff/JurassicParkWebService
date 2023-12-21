@@ -33,23 +33,23 @@ public sealed class SpeciesController : EntityController<Species, InboundSpecies
         species.Name = inboundResource.Name!;
     }
 
-    protected override string? ValidateInboundEntity(InboundSpeciesResource inboundSpeciesResource, Species? speciesToUpdate = null) {
-        if (string.IsNullOrEmpty(inboundSpeciesResource.Name)) {
+    protected override string? ValidateInboundEntity(InboundSpeciesResource inboundResource, Species? speciesToUpdate = null) {
+        if (string.IsNullOrEmpty(inboundResource.Name)) {
             return "Name must be supplied.";
         }
 
-        var speciesWithSameName = _speciesStore.Search(inboundSpeciesResource.Name);
+        var speciesWithSameName = _speciesStore.Search(inboundResource.Name);
         if (speciesWithSameName.Any(x => speciesToUpdate == null || x.Id != speciesToUpdate.Id)) {
             return "Name already exists.";
         }
 
-        if (string.IsNullOrEmpty(inboundSpeciesResource.SpeciesType)) {
+        if (string.IsNullOrEmpty(inboundResource.SpeciesType)) {
             return "SpeciesType must be supplied.";
         }
 
         //validate SpeciesType when creating
         if (speciesToUpdate == null) {
-            if (!Enum.TryParse<SpeciesType>(inboundSpeciesResource.SpeciesType, out _)) {
+            if (!Enum.TryParse<SpeciesType>(inboundResource.SpeciesType, out _)) {
                 return "SpeciesType must be 'carnivore' or 'herbivore'.";
             }
 
@@ -57,7 +57,7 @@ public sealed class SpeciesController : EntityController<Species, InboundSpecies
         }
 
         //validate SpeciesType doesn't change when updating
-        if (inboundSpeciesResource.SpeciesType != speciesToUpdate.SpeciesType.ToString()) {
+        if (inboundResource.SpeciesType != speciesToUpdate.SpeciesType.ToString()) {
             return "SpeciesType cannot be changed.";
         }
 

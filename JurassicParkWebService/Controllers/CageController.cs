@@ -52,21 +52,21 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
         return new OutboundCageResource(cage, GetDinosaurCount(cage));
     }
 
-    protected override string? ValidateInboundEntity(InboundCageResource inboundCageResource, Cage? cageToUpdate = null) {
-        if (string.IsNullOrEmpty(inboundCageResource.Name)) {
+    protected override string? ValidateInboundEntity(InboundCageResource inboundResource, Cage? cageToUpdate = null) {
+        if (string.IsNullOrEmpty(inboundResource.Name)) {
             return "Name must be supplied.";
         }
 
-        var cagesWithSameName = _cageStore.Search(inboundCageResource.Name, powerStatus: null);
+        var cagesWithSameName = _cageStore.Search(inboundResource.Name, powerStatus: null);
         if (cagesWithSameName.Any(x => cageToUpdate == null || x.Id != cageToUpdate.Id)) {
             return "Name already exists.";
         }
 
-        if (inboundCageResource.MaxCapacity == null) {
+        if (inboundResource.MaxCapacity == null) {
             return "MaxCapacity must be supplied.";
         }
 
-        if (inboundCageResource.MaxCapacity <= 0) {
+        if (inboundResource.MaxCapacity <= 0) {
             return "MaxCapacity is invalid.";
         }
 
@@ -76,15 +76,15 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
 
         //this is validation that only applies to updates
         var dinosaurCount = GetDinosaurCount(cageToUpdate);
-        if (inboundCageResource.MaxCapacity < dinosaurCount) {
+        if (inboundResource.MaxCapacity < dinosaurCount) {
             return "MaxCapacity must be higher than DinosaurCount.";
         }
 
-        if (string.IsNullOrEmpty(inboundCageResource.PowerStatus)) {
+        if (string.IsNullOrEmpty(inboundResource.PowerStatus)) {
             return "PowerStatus must be supplied.";
         }
 
-        if (!Enum.TryParse<CagePowerStatus>(inboundCageResource.PowerStatus, out var powerStatus)) {
+        if (!Enum.TryParse<CagePowerStatus>(inboundResource.PowerStatus, out var powerStatus)) {
             return "PowerStatus must be 'active' or 'down'.";
         }
 

@@ -218,7 +218,7 @@ public sealed class SpeciesControllerTests {
     }
 
     [TestMethod]
-    public void GetMustCallStore() {
+    public void DeleteMustCallStore() {
         //arrange
         var species = GenerateRandomSpecies();
 
@@ -381,9 +381,8 @@ public sealed class SpeciesControllerTests {
 
     [TestMethod]
     public void UpdateMustSaveNewValues() {
+        //arrange
         var species = GenerateRandomSpecies();
-        
-        //the new values must be different from the existing values so we can detect changes
         var speciesName = GenerateRandom.String();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
