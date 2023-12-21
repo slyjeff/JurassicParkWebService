@@ -18,6 +18,14 @@ public sealed class SpeciesController : EntityController<Species, InboundSpecies
         _dinosaurStore = dinosaurStore;
     }
 
+    [HttpGet]
+    public IActionResult GetAll() {
+        var speciesList = _speciesStore.Search();
+        var resources = speciesList.Select(CreateOutboundResource);
+
+        return StatusCode(200, resources);
+    }
+
     protected override Species CreateFromInboundResource(InboundSpeciesResource inboundResource) {
         return new Species {
             Name = inboundResource.Name!,
@@ -65,7 +73,7 @@ public sealed class SpeciesController : EntityController<Species, InboundSpecies
     }
 
     protected override string? ValidateDeleteEntity(Species speciesToDelete) {
-        if (_dinosaurStore.Search(name: null, speciesToDelete.Id, cageId: null).Any()) {
+        if (_dinosaurStore.Search(speciesId: speciesToDelete.Id).Any()) {
             return "Cannot delete while Dinosaurs of this species exist.";
         }
 

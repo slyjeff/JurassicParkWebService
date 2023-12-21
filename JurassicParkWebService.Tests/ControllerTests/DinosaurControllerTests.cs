@@ -414,6 +414,61 @@ public sealed class DinosaurControllerTests {
 
     #endregion
 
+    #region Search
+
+    [TestMethod]
+    public void SearchWithInvalidSpeciesIdMustReturnError() {
+        //arrange
+        var speciesId = GenerateRandom.Int();
+
+        _mockSpeciesStore.Setup(x => x.Get(speciesId)).Returns((Species?)null);
+
+        //act
+        var result = _dinosaurController.Search(name: null, speciesId: speciesId) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("SpeciesId is invalid.", result.Value);
+    }
+
+    [TestMethod]
+    public void SearchMustPassParametersToStore() {
+        //arrange
+        var dinosaurName = GenerateRandom.String();
+        var speciesId = GenerateRandom.Int();
+
+        _mockDinosaurStore.Setup(x => x.Search(dinosaurName, speciesId, null)).Returns(new List<Dinosaur>());
+
+        //act
+        _dinosaurController.Search(dinosaurName, speciesId);
+
+        //assert
+        _mockDinosaurStore.Verify(x => x.Search(dinosaurName, speciesId, null), Times.Once);
+    }
+
+    [TestMethod]
+    public void SearchMustReturnDinosaursAsResources() {
+        //arrange
+        var mockDinosaurs = new List<Dinosaur>();
+        for (var x = 0; x < GenerateRandom.Int(2, 10); x++) {
+            mockDinosaurs.Add(GenerateRandomDinosaur());
+        }
+
+        _mockDinosaurStore.Setup(x => x.Search(null, null, null)).Returns(mockDinosaurs);
+
+        //act
+        var result = _dinosaurController.Search(name: null, speciesId: null) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+        Assert.IsTrue(mockDinosaurs.EqualsResourceList(result.Value));
+    }
+
+    #endregion
+
+
     private static Dinosaur GenerateRandomDinosaur() {
         return new Dinosaur {
             Id = GenerateRandom.Int(),

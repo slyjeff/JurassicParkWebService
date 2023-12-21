@@ -35,6 +35,12 @@ Things to Add:
 
 --------------------
 
+TODO: Handle Assigning/removing Dinosaures to/from cages
+TODO: Handle listing Dinosaures in a cage
+TODO: Handle listing Dinosaures by species
+
+--------------------
+
 Endpoints:
 
 /cage
@@ -44,34 +50,43 @@ GET: Search for cages
 POST: Add a cage
   *Name
   *Max Capacity
-/{cageId} PUT: update cage
-  *Name
-  *Max Capacity
-
-/cage/dinosaur
-GET: List of all dinosaures in a cage
-/{dinosaurId} PUT: Add dinosaure to cage
-/{dinosaurId} DELETE: Remove dinosaure from cage
+/{cageId} 
+  GET: Get a single cage
+  PUT: update cage
+    *Name
+    *Max Capacity
+    *Power Status
+  DELETE: Remove a cage
+/dinosaur
+  GET: List of all dinosaures in a cage
+/dinosaur/{dinosaurId} 
+  PUT: Add dinosaure to cage
+  DELETE: Remove dinosaure from cage
 
 /species
 GET: List all Species
 POST: Add a Species
   *Name
   *Herbivore/Carnivore
-/{speciesId} GET: Get a single species
-/{speciesId} PUT: Update a Species
-  *Name
-/{speciesId} DELETE: Remove a species
+/{speciesId} 
+  GET: Get a single species
+  PUT: Update a Species
+    *Name
+    *Herbivore/Carnivore - cannot be changed
+  DELETE: Remove a species
+/{speciesId}
+  GET: All dinosaures of this species
 
 /dinosaur
 GET: Search for Dinosaurs
   *Name
-  *Species
+  *SpeciesId
 POST: Add a Dinosaur
   *Name
-  *Herbivore/Carnivore
-/{dinosaurId} GET: Get a single Dinosaur
-/{dinosaurId} PUT: Update a Dinosaure
-  *Name
-  *Species
-/{dinosaurId} DELETE: Remove a dinosaur
+  *SpeciesId
+/{dinosaurId} 
+  GET: Get a single Dinosaur
+  PUT: Update a Dinosaure
+    *Name
+    *SpeciesId
+  DELETE: Remove a dinosaur

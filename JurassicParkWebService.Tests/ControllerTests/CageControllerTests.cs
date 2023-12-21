@@ -525,7 +525,7 @@ public sealed class CageControllerTests {
         var powerStatus = GenerateRandom.String();
 
         //act
-        var result = _cageController.Search(cageName: null, powerStatus: powerStatus) as ObjectResult;
+        var result = _cageController.Search(name: null, powerStatus: powerStatus) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);
@@ -548,7 +548,7 @@ public sealed class CageControllerTests {
     }
 
     [TestMethod]
-    public void SearchMustReturnAllCagesAsResources() {
+    public void SearchMustReturnCagesAsResources() {
         //arrange
         var mockCages = new List<Cage>();
         for (var x = 0; x < GenerateRandom.Int(2, 10); x++) {
@@ -558,7 +558,7 @@ public sealed class CageControllerTests {
         _mockCageStore.Setup(x => x.Search(null, null)).Returns(mockCages);
 
         //act
-        var result = _cageController.Search(cageName: null, powerStatus: null) as ObjectResult;
+        var result = _cageController.Search(name: null, powerStatus: null) as ObjectResult;
 
         //assert
         Assert.IsNotNull(result);

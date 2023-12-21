@@ -409,6 +409,31 @@ public sealed class SpeciesControllerTests {
 
     #endregion
 
+
+    #region Get All
+
+    [TestMethod]
+    public void GetAllMustReturnAllSpeciesAsResources() {
+        //arrange
+        var mockSpecies = new List<Species>();
+        for (var x = 0; x < GenerateRandom.Int(2, 10); x++) {
+            mockSpecies.Add(GenerateRandomSpecies());
+        }
+
+        _mockSpeciesStore.Setup(x => x.Search(null)).Returns(mockSpecies);
+
+        //act
+        var result = _speciesController.GetAll() as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+        Assert.IsTrue(mockSpecies.EqualsResourceList(result.Value));
+    }
+
+    #endregion
+
+
     private static Species GenerateRandomSpecies() {
         return new Species {
             Id = GenerateRandom.Int(),

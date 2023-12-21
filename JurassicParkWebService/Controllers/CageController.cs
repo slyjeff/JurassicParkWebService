@@ -19,7 +19,7 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
     }
 
     [HttpGet]
-    public IActionResult Search([FromQuery] string? cageName, [FromQuery] string? powerStatus) {
+    public IActionResult Search([FromQuery] string? name, [FromQuery] string? powerStatus) {
         CagePowerStatus? powerStatusValue = null;
         if (powerStatus != null) {
             if (!Enum.TryParse<CagePowerStatus>(powerStatus, out var parsedPowerStatusValue)) {
@@ -29,7 +29,7 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
             powerStatusValue = parsedPowerStatusValue;
         }
 
-        var cages = _cageStore.Search(cageName, powerStatusValue);
+        var cages = _cageStore.Search(name, powerStatusValue);
         var resources = cages.Select(CreateOutboundResource);
 
         return StatusCode(200, resources);
@@ -104,6 +104,6 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
     }
 
     private int GetDinosaurCount(Cage cage) {
-        return _dinosaurStore.Search(name: null, speciesId: null, cageId: cage.Id).Count;
+        return _dinosaurStore.Search(cageId: cage.Id).Count;
     }
 }

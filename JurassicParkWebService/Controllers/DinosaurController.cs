@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using JurassicParkWebService.Entities;
 using JurassicParkWebService.Resources;
@@ -15,6 +16,18 @@ public sealed class DinosaurController : EntityController<Dinosaur, InboundDinos
     public DinosaurController(IDinosaurStore dinosaurStore, ISpeciesStore speciesStore) : base (dinosaurStore) {
         _dinosaurStore = dinosaurStore;
         _speciesStore = speciesStore;
+    }
+
+    [HttpGet]
+    public IActionResult Search([FromQuery] string? name, [FromQuery] int? speciesId) {
+        if ((speciesId != null) && _speciesStore.Get(speciesId.Value) == null) {
+            return StatusCode(400, "SpeciesId is invalid.");
+        }
+
+        var dinosaurs = _dinosaurStore.Search(name, speciesId);
+        var resources = dinosaurs.Select(CreateOutboundResource);
+
+        return StatusCode(200, resources);
     }
 
     protected override Dinosaur CreateFromInboundResource(InboundDinosaurResource inboundResource) {
