@@ -12,10 +12,12 @@ namespace JurassicParkWebService.Controllers;
 public sealed class CageController : EntityController<Cage, InboundCageResource, OutboundCageResource> {
     private readonly ICageStore _cageStore;
     private readonly IDinosaurStore _dinosaurStore;
+    private readonly ISpeciesStore _speciesStore;
 
-    public CageController(ICageStore cageStore, IDinosaurStore dinosaurStore) : base(cageStore) {
+    public CageController(ICageStore cageStore, IDinosaurStore dinosaurStore, ISpeciesStore speciesStore) : base(cageStore) {
         _cageStore = cageStore;
         _dinosaurStore = dinosaurStore;
+        _speciesStore = speciesStore;
     }
 
     [HttpGet]
@@ -33,6 +35,23 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
         var resources = cages.Select(CreateOutboundResource);
 
         return StatusCode(200, resources);
+    }
+
+    [HttpGet("{id:int}/dinosaurs")]
+    public IActionResult GetDinosaurs(int id) {
+        if (_cageStore.Get(id) == null) {
+            return StatusCode(404, "Cage not found.");
+        }
+
+        var dinosaurs = _dinosaurStore.Search(cageId: id);
+        var resources = dinosaurs.Select(CreateOutboundDinosaurResource);
+
+        return StatusCode(200, resources);
+    }
+
+    private OutboundDinosaurResource CreateOutboundDinosaurResource(Dinosaur dinosaur) {
+        var species = _speciesStore.Get(dinosaur.SpeciesId);
+        return new OutboundDinosaurResource(dinosaur, species!);
     }
 
     protected override Cage CreateFromInboundResource(InboundCageResource inboundResource) {

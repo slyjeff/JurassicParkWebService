@@ -36,8 +36,7 @@ Things to Add:
 --------------------
 
 TODO: Handle Assigning/removing Dinosaures to/from cages
-TODO: Handle listing Dinosaures in a cage
-TODO: Handle listing Dinosaures by species
+TODO: Handle listing Dinosaurs in a cage
 
 --------------------
 

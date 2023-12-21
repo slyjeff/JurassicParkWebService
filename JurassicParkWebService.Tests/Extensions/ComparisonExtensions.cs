@@ -57,24 +57,31 @@ internal static class ComparisonExtensions {
         return true;
     }
 
-    public static bool EqualsResource(this Dinosaur dinosaur, OutboundDinosaurResource? dinosaurResource) {
+    public static bool EqualsResource(this Dinosaur dinosaur, OutboundDinosaurResource? dinosaurResource, Species species) {
         if (dinosaurResource == null) {
             return false;
         }
 
         return dinosaur.Id == dinosaurResource.Id
             && dinosaur.Name == dinosaurResource.Name
-            && dinosaur.SpeciesId == dinosaurResource.SpeciesId;
+            && dinosaur.SpeciesId == dinosaurResource.SpeciesId
+            && species.Name == dinosaurResource.SpeciesName;
     }
 
-    public static bool EqualsResourceList(this IList<Dinosaur> dinosaurs, object? value) {
+    public static bool EqualsResourceList(this IList<Dinosaur> dinosaurs, object? value, IList<Species> speciesList) {
         if (value is not IEnumerable<OutboundDinosaurResource> resources) {
             return false;
         }
 
         var resourcesList = resources.ToList();
         for (var x = 0; x < dinosaurs.Count; x++) {
-            if (!dinosaurs[x].EqualsResource(resourcesList[x])) {
+            var dinosaur = dinosaurs[x];
+            var species = speciesList.FirstOrDefault(x => x.Id == dinosaur.SpeciesId);
+            if (species == null) {
+                return false;
+            }
+
+            if (!dinosaur.EqualsResource(resourcesList[x], species)) {
                 return false;
             }
         }

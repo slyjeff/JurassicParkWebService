@@ -26,6 +26,19 @@ public sealed class SpeciesController : EntityController<Species, InboundSpecies
         return StatusCode(200, resources);
     }
 
+    [HttpGet("{id:int}/dinosaurs")]
+    public IActionResult GetDinosaurs(int id) {
+        var species = _speciesStore.Get(id);
+        if (species == null) {
+            return StatusCode(404, "Species not found.");
+        }
+
+        var dinosaurs = _dinosaurStore.Search(speciesId: id);
+        var resources = dinosaurs.Select(x => new OutboundDinosaurResource(x, species));
+
+        return StatusCode(200, resources);
+    }
+
     protected override Species CreateFromInboundResource(InboundSpeciesResource inboundResource) {
         return new Species {
             Name = inboundResource.Name!,

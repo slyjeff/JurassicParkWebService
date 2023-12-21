@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using JurassicParkWebService.Controllers;
 using JurassicParkWebService.Entities;
 using JurassicParkWebService.Resources;
@@ -34,7 +35,7 @@ public sealed class SpeciesControllerTests {
         var randomGeneratedId = GenerateRandom.Int();
 
         var speciesName = GenerateRandom.String();
-        var speciesType = GenerateRandomSpeciesType();
+        var speciesType = GenerateRandom.SpeciesType();
 
         _mockSpeciesStore.Setup(x => x.Add(It.IsAny<Species>())).Callback((Species c) => c.Id = randomGeneratedId);
 
@@ -76,7 +77,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void AddMustReturnErrorIfNameNotSupplied() {
         //arrange
-        var speciesType = GenerateRandomSpecies();
+        var speciesType = GenerateRandom.Species();
 
         //act
         var inboundResource = new InboundSpeciesResource {
@@ -95,9 +96,9 @@ public sealed class SpeciesControllerTests {
     public void AddMustReturnErrorIfNameAlreadyExists() {
         //arrange
         var speciesName = GenerateRandom.String();
-        var speciesType = GenerateRandomSpecies();
+        var speciesType = GenerateRandom.Species();
 
-        _mockSpeciesStore.Setup(x => x.Search(speciesName)).Returns(new List<Species>{GenerateRandomSpecies()});
+        _mockSpeciesStore.Setup(x => x.Search(speciesName)).Returns(new List<Species>{GenerateRandom.Species()});
 
         //act
         var inboundResource = new InboundSpeciesResource {
@@ -153,7 +154,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void GetMustReturnSpeciesById() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
@@ -200,7 +201,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void DeleteMustReturnErrorIfDinosaursOfSpeciesExist() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
         var dinosaursWithSpecies = new List<Dinosaur> { new(), new() };
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
@@ -220,7 +221,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void DeleteMustCallStore() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
         _mockDinosaurStore.Setup(x => x.Search(null, species.Id, null)).Returns(new List<Dinosaur>());
@@ -243,7 +244,7 @@ public sealed class SpeciesControllerTests {
         //arrange
         var unknownId = GenerateRandom.Int();
         var speciesName = GenerateRandom.String();
-        var speciesType = GenerateRandomSpeciesType();
+        var speciesType = GenerateRandom.SpeciesType();
 
         //act
         var inboundResource = new InboundSpeciesResource {
@@ -261,7 +262,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfBodyIsNotSupplied() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
@@ -277,7 +278,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfNameNotSupplied() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
@@ -297,12 +298,12 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfNameAlreadyExists() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
         var speciesName = GenerateRandom.String();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
-        _mockSpeciesStore.Setup(x => x.Search(speciesName)).Returns(new List<Species> { species, GenerateRandomSpecies() });
+        _mockSpeciesStore.Setup(x => x.Search(speciesName)).Returns(new List<Species> { species, GenerateRandom.Species() });
 
         //act
         var inboundResource = new InboundSpeciesResource {
@@ -320,7 +321,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void UpdateMustNotReturnErrorIfExistingNameIsTheSpeciesBeingUpdated() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
         var speciesName = GenerateRandom.String();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
@@ -342,7 +343,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfSpeciesTypeIsNotSupplied() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
@@ -362,7 +363,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfSpeciesTypeDoesNotMatchExistingValue() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
@@ -382,7 +383,7 @@ public sealed class SpeciesControllerTests {
     [TestMethod]
     public void UpdateMustSaveNewValues() {
         //arrange
-        var species = GenerateRandomSpecies();
+        var species = GenerateRandom.Species();
         var speciesName = GenerateRandom.String();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
@@ -409,7 +410,6 @@ public sealed class SpeciesControllerTests {
 
     #endregion
 
-
     #region Get All
 
     [TestMethod]
@@ -417,7 +417,7 @@ public sealed class SpeciesControllerTests {
         //arrange
         var mockSpecies = new List<Species>();
         for (var x = 0; x < GenerateRandom.Int(2, 10); x++) {
-            mockSpecies.Add(GenerateRandomSpecies());
+            mockSpecies.Add(GenerateRandom.Species());
         }
 
         _mockSpeciesStore.Setup(x => x.Search(null)).Returns(mockSpecies);
@@ -433,16 +433,45 @@ public sealed class SpeciesControllerTests {
 
     #endregion
 
+    #region GetDinosaurs
+    [TestMethod]
+    public void GetDinosaursMustReturnErrorIfSpeciesNotFound() {
+        //arrange
+        var unknownId = GenerateRandom.Int();
 
-    private static Species GenerateRandomSpecies() {
-        return new Species {
-            Id = GenerateRandom.Int(),
-            Name = GenerateRandom.String(),
-            SpeciesType = GenerateRandomSpeciesType()
-        };
+        //act
+        var result = _speciesController.GetDinosaurs(unknownId) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Species not found.", result.Value);
     }
 
-    private static SpeciesType GenerateRandomSpeciesType() {
-        return GenerateRandom.Int(0, 1) == 1 ? SpeciesType.Carnivore : SpeciesType.Herbivore;
+    [TestMethod]
+    public void GetDinosaursMustReturnListAsResources() {
+        //arrange
+        var species = GenerateRandom.Species();
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+
+        var mockSpecies = new List<Species> { species };
+
+        var mockDinosaurs = new List<Dinosaur>();
+        for (var x = 0; x < GenerateRandom.Int(2, 10); x++) {
+            var mockDinosaur = GenerateRandom.Dinosaur();
+            mockDinosaur.SpeciesId = mockSpecies.First().Id;
+            mockDinosaurs.Add(mockDinosaur);
+        }
+
+        _mockDinosaurStore.Setup(x => x.Search(null, species.Id, null)).Returns(mockDinosaurs);
+
+        //act
+        var result = _speciesController.GetDinosaurs(species.Id) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+        Assert.IsTrue(mockDinosaurs.EqualsResourceList(result.Value, mockSpecies));
     }
+    #endregion
 }

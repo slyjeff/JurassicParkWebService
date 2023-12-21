@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using JurassicParkWebService.Controllers;
 using JurassicParkWebService.Entities;
 using JurassicParkWebService.Resources;
@@ -33,16 +34,17 @@ public sealed class DinosaurControllerTests {
     public void AddMustCreateDinosaurInTheDatabase() {
         //arrange
         var randomGeneratedId = GenerateRandom.Int();
-
         var dinosaurName = GenerateRandom.String();
-        var speciesId = GenerateRandom.Int();
+
+        var species = GenerateRandom.Species();
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
         _mockDinosaurStore.Setup(x => x.Add(It.IsAny<Dinosaur>())).Callback((Dinosaur c) => c.Id = randomGeneratedId);
 
         //act
         var inboundResource = new InboundDinosaurResource {
             Name = dinosaurName,
-            SpeciesId = speciesId,
+            SpeciesId = species.Id,
         };
         var result = _dinosaurController.Add(inboundResource) as ObjectResult;
 
@@ -50,7 +52,7 @@ public sealed class DinosaurControllerTests {
         var expectedDinosaur = new Dinosaur {
             Id = randomGeneratedId,
             Name = dinosaurName,
-            SpeciesId = speciesId
+            SpeciesId = species.Id
         };
 
         _mockDinosaurStore.Verify(x => x.Add(It.Is<Dinosaur>(y => y.Equals(expectedDinosaur))));
@@ -59,7 +61,7 @@ public sealed class DinosaurControllerTests {
         Assert.AreEqual(200, result.StatusCode);
         var resource = result.Value as OutboundDinosaurResource;
         Assert.IsNotNull(resource);
-        Assert.IsTrue(expectedDinosaur.EqualsResource(resource));
+        Assert.IsTrue(expectedDinosaur.EqualsResource(resource, species));
     }
 
     [TestMethod]
@@ -98,7 +100,7 @@ public sealed class DinosaurControllerTests {
         var dinosaurName = GenerateRandom.String();
         var speciesId = GenerateRandom.Int();
 
-        _mockDinosaurStore.Setup(x => x.Search(dinosaurName, null, null)).Returns(new List<Dinosaur> {GenerateRandomDinosaur()});
+        _mockDinosaurStore.Setup(x => x.Search(dinosaurName, null, null)).Returns(new List<Dinosaur> {GenerateRandom.Dinosaur()});
 
         //act
         var inboundResource = new InboundDinosaurResource {
@@ -155,9 +157,13 @@ public sealed class DinosaurControllerTests {
 
     #region Get
     [TestMethod]
-    public void GetMustReturnSpeciesById() {
+    public void GetMustReturnDinosaurById() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
+
+        var species = GenerateRandom.Species();
+        dinosaur.SpeciesId = species.Id;
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
 
@@ -167,7 +173,7 @@ public sealed class DinosaurControllerTests {
         //arrange
         Assert.IsNotNull(result);
         Assert.AreEqual(200, result.StatusCode);
-        Assert.IsTrue(dinosaur.EqualsResource(result.Value as OutboundDinosaurResource));
+        Assert.IsTrue(dinosaur.EqualsResource(result.Value as OutboundDinosaurResource, species));
     }
 
     [TestMethod]
@@ -204,7 +210,7 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void DeleteMustCallStore() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
 
@@ -244,7 +250,7 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfBodyIsNotSupplied() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
 
@@ -260,7 +266,7 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfNameNotSupplied() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
 
@@ -280,11 +286,11 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfNameAlreadyExists() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
         var dinosaurName = GenerateRandom.String();
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
-        _mockDinosaurStore.Setup(x => x.Search(dinosaurName, null, null)).Returns(new List<Dinosaur> { dinosaur, GenerateRandomDinosaur() });
+        _mockDinosaurStore.Setup(x => x.Search(dinosaurName, null, null)).Returns(new List<Dinosaur> { dinosaur, GenerateRandom.Dinosaur() });
 
         //act
         var inboundResource = new InboundDinosaurResource {
@@ -302,7 +308,7 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void UpdateMustNotReturnErrorIfExistingNameIsTheDinosaurBeingUpdated() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
         var dinosaurName = GenerateRandom.String();
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
@@ -323,7 +329,7 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfSpeciesIdIsNotSupplied() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
 
@@ -343,7 +349,7 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfSpeciesIdDoesNotMatchExistingValueAndDinosaurIsInCage() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
         dinosaur.CageId = GenerateRandom.Int();
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
@@ -364,7 +370,7 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void UpdateMustNotReturnErrorIfSpeciesIdDoesNotMatchExistingValueAndDinosaurIsNotInCage() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
         dinosaur.CageId = null;
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
@@ -384,18 +390,19 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void UpdateMustSaveNewValues() {
         //arrange
-        var dinosaur = GenerateRandomDinosaur();
+        var dinosaur = GenerateRandom.Dinosaur();
         dinosaur.CageId = null;
         
         var dinosaurName = GenerateRandom.String();
-        var speciesId = GenerateRandom.Int();
+        var species = GenerateRandom.Species();
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
 
         //act
         var inboundResource = new InboundDinosaurResource {
             Name = dinosaurName,
-            SpeciesId = speciesId
+            SpeciesId = species.Id
         };
         var result = _dinosaurController.Update(dinosaur.Id, inboundResource) as ObjectResult;
 
@@ -403,13 +410,13 @@ public sealed class DinosaurControllerTests {
         var expectedDinosaur = new Dinosaur {
             Id = dinosaur.Id,
             Name = dinosaurName,
-            SpeciesId = speciesId
+            SpeciesId = species.Id
         };
         _mockDinosaurStore.Verify(x => x.Update(It.Is<Dinosaur>(y => expectedDinosaur.Equals(y))), Times.Once());
 
         Assert.IsNotNull(result);
         Assert.AreEqual(200, result.StatusCode);
-        Assert.IsTrue(dinosaur.EqualsResource(result.Value as OutboundDinosaurResource));
+        Assert.IsTrue(dinosaur.EqualsResource(result.Value as OutboundDinosaurResource, species));
     }
 
     #endregion
@@ -450,12 +457,18 @@ public sealed class DinosaurControllerTests {
     [TestMethod]
     public void SearchMustReturnDinosaursAsResources() {
         //arrange
+        var species = GenerateRandom.Species();
+        var mockSpecies = new List<Species> { species };
+
         var mockDinosaurs = new List<Dinosaur>();
         for (var x = 0; x < GenerateRandom.Int(2, 10); x++) {
-            mockDinosaurs.Add(GenerateRandomDinosaur());
+            var mockDinosaur = GenerateRandom.Dinosaur();
+            mockDinosaur.SpeciesId = mockSpecies.First().Id;
+            mockDinosaurs.Add(mockDinosaur);
         }
-
         _mockDinosaurStore.Setup(x => x.Search(null, null, null)).Returns(mockDinosaurs);
+
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
 
         //act
         var result = _dinosaurController.Search(name: null, speciesId: null) as ObjectResult;
@@ -463,17 +476,8 @@ public sealed class DinosaurControllerTests {
         //assert
         Assert.IsNotNull(result);
         Assert.AreEqual(200, result.StatusCode);
-        Assert.IsTrue(mockDinosaurs.EqualsResourceList(result.Value));
+        Assert.IsTrue(mockDinosaurs.EqualsResourceList(result.Value, mockSpecies));
     }
 
     #endregion
-
-
-    private static Dinosaur GenerateRandomDinosaur() {
-        return new Dinosaur {
-            Id = GenerateRandom.Int(),
-            Name = GenerateRandom.String(),
-            SpeciesId = GenerateRandom.Int()
-        };
-    }
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using JurassicParkWebService.Controllers;
 using JurassicParkWebService.Entities;
 using JurassicParkWebService.Resources;
@@ -16,6 +17,7 @@ public sealed class CageControllerTests {
     private Mock<ICageStore> _mockCageStore = null!;
     private Mock<IDinosaurStore> _mockDinosaurStore = null!;
     private CageController _cageController = null!;
+    private Mock<ISpeciesStore> _mockSpeciesStore = null!;
 
     [TestInitialize]
     public void Setup() {
@@ -25,7 +27,9 @@ public sealed class CageControllerTests {
         _mockDinosaurStore = new Mock<IDinosaurStore>();
         _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>())).Returns(new List<Dinosaur>());
 
-        _cageController = new CageController(_mockCageStore.Object, _mockDinosaurStore.Object);
+        _mockSpeciesStore = new Mock<ISpeciesStore>();
+
+        _cageController = new CageController(_mockCageStore.Object, _mockDinosaurStore.Object, _mockSpeciesStore.Object);
     }
 
     #region Add
@@ -99,7 +103,7 @@ public sealed class CageControllerTests {
         var cageName = GenerateRandom.String();
         var maxCapacity = GenerateRandom.Int(1, 10);
 
-        _mockCageStore.Setup(x => x.Search(cageName, null)).Returns(new List<Cage>{GenerateRandomCage()});
+        _mockCageStore.Setup(x => x.Search(cageName, null)).Returns(new List<Cage>{GenerateRandom.Cage()});
 
         //act
         var inboundResource = new InboundCageResource {
@@ -155,7 +159,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void GetMustReturnCageById() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -202,7 +206,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void DeleteMustReturnErrorIfDinosaurCountIsGreaterThanZero() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
         cage.PowerStatus = CagePowerStatus.Active;
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
@@ -224,7 +228,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void DeleteMustCallStore() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -264,7 +268,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfBodyIsNotSupplied() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -280,7 +284,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfNameNotSupplied() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -301,12 +305,12 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfNameAlreadyExists() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
         var cageName = GenerateRandom.String();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
-        _mockCageStore.Setup(x => x.Search(cageName, null)).Returns(new List<Cage> { cage, GenerateRandomCage() });
+        _mockCageStore.Setup(x => x.Search(cageName, null)).Returns(new List<Cage> { cage, GenerateRandom.Cage() });
 
         //act
         var inboundResource = new InboundCageResource {
@@ -325,7 +329,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustNotReturnErrorIfExistingNameIsTheCageBeingUpdated() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
         var cageName = GenerateRandom.String();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
@@ -348,7 +352,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfMaxCapacityIsNotSupplied() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -369,7 +373,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfMaxCapacityIsNotGreaterThanZero() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -389,7 +393,7 @@ public sealed class CageControllerTests {
 
     [TestMethod]
     public void UpdateMustReturnErrorIfMaxCapacityIsSetBelowDinosaurCount() {
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
         cage.PowerStatus = CagePowerStatus.Active;
         cage.MaxCapacity = 10;
 
@@ -416,7 +420,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfPowerStatusNotSupplied() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -437,7 +441,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfPowerStatusInvalid() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -458,7 +462,7 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfPowerStatusIsSetToDownWithDinosaursInCage() {
         //arrange
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
         cage.PowerStatus = CagePowerStatus.Active;
         cage.MaxCapacity = 2;
 
@@ -483,7 +487,7 @@ public sealed class CageControllerTests {
 
     [TestMethod]
     public void UpdateMustSaveNewValues() {
-        var cage = GenerateRandomCage();
+        var cage = GenerateRandom.Cage();
         cage.PowerStatus = GenerateRandom.Int(0, 1) == 1 ? CagePowerStatus.Active : CagePowerStatus.Down;
         
         //the new values must be different from the existing values so we can detect changes
@@ -552,7 +556,7 @@ public sealed class CageControllerTests {
         //arrange
         var mockCages = new List<Cage>();
         for (var x = 0; x < GenerateRandom.Int(2, 10); x++) {
-            mockCages.Add(GenerateRandomCage());
+            mockCages.Add(GenerateRandom.Cage());
         }
 
         _mockCageStore.Setup(x => x.Search(null, null)).Returns(mockCages);
@@ -568,15 +572,48 @@ public sealed class CageControllerTests {
 
     #endregion
 
-    private static Cage GenerateRandomCage() {
-        var maxCapacity = GenerateRandom.Int(1, 10);
-        var powerStatus = GenerateRandom.Int(0, 1) == 1 ? CagePowerStatus.Active : CagePowerStatus.Down;
+    #region GetDinosaurs
+    [TestMethod]
+    public void GetDinosaursMustReturnErrorIfCageNotFound() {
+        //arrange
+        var unknownId = GenerateRandom.Int();
 
-        return new Cage {
-            Id = GenerateRandom.Int(),
-            Name = GenerateRandom.String(),
-            MaxCapacity = maxCapacity,
-            PowerStatus = powerStatus
-        };
+        //act
+        var result = _cageController.GetDinosaurs(unknownId) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(404, result.StatusCode);
+        Assert.AreEqual("Cage not found.", result.Value);
     }
+
+    [TestMethod]
+    public void GetDinosaursMustReturnListAsResources() {
+        //arrange
+        var cageId = GenerateRandom.Int();
+        _mockCageStore.Setup(x => x.Get(cageId)).Returns(new Cage());
+
+        var species = GenerateRandom.Species();
+        var mockSpecies = new List<Species> { species };
+
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+
+        var mockDinosaurs = new List<Dinosaur>();
+        for (var x = 0; x < GenerateRandom.Int(2, 10); x++) {
+            var mockDinosaur = GenerateRandom.Dinosaur();
+            mockDinosaur.SpeciesId = mockSpecies.First().Id;
+            mockDinosaurs.Add(mockDinosaur);
+        }
+
+        _mockDinosaurStore.Setup(x => x.Search(null, null, cageId)).Returns(mockDinosaurs);
+
+        //act
+        var result = _cageController.GetDinosaurs(cageId) as ObjectResult;
+
+        //assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(200, result.StatusCode);
+        Assert.IsTrue(mockDinosaurs.EqualsResourceList(result.Value, mockSpecies));
+    }
+    #endregion
 }
