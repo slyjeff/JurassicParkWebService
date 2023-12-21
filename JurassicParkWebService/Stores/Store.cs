@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using JurassicParkWebService.Entities;
+using JurassicParkWebService.Extensions;
 using Microsoft.Data.SqlClient;
 
 namespace JurassicParkWebService.Stores;
@@ -21,7 +22,7 @@ internal abstract class Store<T> : IStore<T> where T : IdentifiableEntity, new()
         EntityName = typeof(T).Name;
         
         var properties = typeof(T).GetProperties();
-        SelectFieldList = string.Join(",", properties.Select(x => x.Name));
+        SelectFieldList = string.Join(",", properties.Select(x => $"{EntityName}.{x.Name}"));
     }
 
     protected readonly string EntityName;
@@ -37,9 +38,7 @@ internal abstract class Store<T> : IStore<T> where T : IdentifiableEntity, new()
             var sql = $"INSERT INTO {EntityName} ({fieldList}) output INSERTED.ID VALUES ({parameterList})";
             var command = new SqlCommand(sql, connection);
 
-            foreach (var property in properties) {
-                command.Parameters.AddWithValue(property.Name, property.GetValue(entity));
-            }
+            command.Parameters.AddFromProperties(entity);
 
             var id = (int)command.ExecuteScalar();
             entity.Id = id;
@@ -56,9 +55,7 @@ internal abstract class Store<T> : IStore<T> where T : IdentifiableEntity, new()
             var sql = $"UPDATE {EntityName} SET {setList} WHERE Id=@Id";
             var command = new SqlCommand(sql, connection);
 
-            foreach (var property in properties) {
-                command.Parameters.AddWithValue(property.Name, property.GetValue(entity));
-            }
+            command.Parameters.AddFromProperties(entity);
 
             command.Parameters.AddWithValue("Id", entity.Id);
 
@@ -81,6 +78,36 @@ internal abstract class Store<T> : IStore<T> where T : IdentifiableEntity, new()
                     : null;
             }
         }
+    }
+
+    protected IList<T> Search(IDictionary<string, string> searchParameters) {
+        var entities = new List<T>();
+        using (var connection = new SqlConnection(_databaseConfiguration.ConnectionString)) {
+            connection.Open();
+
+            var sql = $"SELECT {SelectFieldList} FROM {EntityName}";
+
+            if (searchParameters.Any()) {
+                sql += " WHERE ";
+                sql += string.Join(" AND ", searchParameters.Keys.Select(x => $"{x}=@{x}"));
+            }
+
+            var command = new SqlCommand(sql, connection);
+
+            if (searchParameters.Any()) {
+                foreach (var (key, value) in searchParameters) {
+                    command.Parameters.AddWithValue(key, value);
+                }
+            }
+
+            using (var reader = command.ExecuteReader()) {
+                while (reader.Read()) {
+                    entities.Add(CreateEntityFromReader(reader));
+                }
+            }
+        }
+
+        return entities;
     }
 
     public void Delete(int id) {

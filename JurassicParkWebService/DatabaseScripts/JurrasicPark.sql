@@ -18,3 +18,13 @@ BEGIN
 	insert into Species(Name, SpeciesType) values ('Ankylosaurus', 'Herbivore');
 	insert into Species(Name, SpeciesType) values ('Triceratops', 'Herbivore');
 END
+
+IF (NOT EXISTS (SELECT 0 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Cage'))
+BEGIN
+	CREATE TABLE Cage (
+		Id          int          IDENTITY(1,1) PRIMARY KEY,
+		Name        varchar(MAX) NOT NULL,
+		MaxCapacity int          NOT NULL,
+		PowerStatus varchar(6)   NOT NULL
+	);
+END

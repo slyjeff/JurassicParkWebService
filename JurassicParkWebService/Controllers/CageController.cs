@@ -24,7 +24,7 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
     public IActionResult Search([FromQuery] string? name, [FromQuery] string? powerStatus) {
         CagePowerStatus? powerStatusValue = null;
         if (powerStatus != null) {
-            if (!Enum.TryParse<CagePowerStatus>(powerStatus, out var parsedPowerStatusValue)) {
+            if (!Enum.TryParse<CagePowerStatus>(powerStatus, ignoreCase: true, out var parsedPowerStatusValue)) {
                 return StatusCode(400, "PowerStatus must be 'active' or 'down'.");
             }
 

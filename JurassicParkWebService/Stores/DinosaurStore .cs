@@ -1,6 +1,5 @@
 ﻿using JurassicParkWebService.Entities;
 using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
 
 namespace JurassicParkWebService.Stores;
 
