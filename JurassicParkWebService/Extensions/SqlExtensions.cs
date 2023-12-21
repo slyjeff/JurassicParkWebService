@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using System;
+using Microsoft.Data.SqlClient;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -15,6 +16,9 @@ public static class SqlExtensions {
             if (value != null && property.PropertyType.IsEnum) {
                 value = value.ToString();
             }
+
+            value ??= DBNull.Value;
+
             parameters.AddWithValue(property.Name, value);
         }
     }

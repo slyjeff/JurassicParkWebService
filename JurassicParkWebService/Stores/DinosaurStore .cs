@@ -11,6 +11,27 @@ internal sealed class DinosaurStore : Store<Dinosaur>, IDinosaurStore {
     public DinosaurStore(IDatabaseConfiguration databaseConfiguration) : base(databaseConfiguration) { }
 
     public IList<Dinosaur> Search(string? name, int? speciesId, int? cageId, bool? isCarnivore = null) {
-        return new List<Dinosaur>();
+        var searchParameters = new Dictionary<string, object>();
+        var join = string.Empty;
+
+        if (!string.IsNullOrEmpty(name)) {
+            searchParameters.Add("Name", name);
+        }
+
+        if (speciesId != null) {
+            searchParameters.Add("SpeciesId", speciesId.Value);
+        }
+
+        if (cageId != null) {
+            searchParameters.Add("CageId", cageId.Value);
+        }
+
+        if (isCarnivore != null) {
+            join += "JOIN Species on (Dinosaur.SpeciesId = Species.Id)";
+            var speciesType = isCarnivore.Value ? SpeciesType.Carnivore : SpeciesType.Herbivore;
+            searchParameters.Add("SpeciesType", speciesType.ToString());
+        }
+
+        return Search(searchParameters, join);
     }
 }

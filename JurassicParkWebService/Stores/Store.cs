@@ -80,12 +80,15 @@ internal abstract class Store<T> : IStore<T> where T : IdentifiableEntity, new()
         }
     }
 
-    protected IList<T> Search(IDictionary<string, string> searchParameters) {
+    protected IList<T> Search(IDictionary<string, object> searchParameters, string? joinClause = null) {
         var entities = new List<T>();
         using (var connection = new SqlConnection(_databaseConfiguration.ConnectionString)) {
             connection.Open();
 
             var sql = $"SELECT {SelectFieldList} FROM {EntityName}";
+            if (!string.IsNullOrEmpty(joinClause)) {
+                sql += $" {joinClause}";
+            }
 
             if (searchParameters.Any()) {
                 sql += " WHERE ";
@@ -133,6 +136,10 @@ internal abstract class Store<T> : IStore<T> where T : IdentifiableEntity, new()
 
             if (property.PropertyType.IsEnum) {
                 value = Enum.Parse(property.PropertyType, (string)value);
+            }
+
+            if (value == DBNull.Value) {
+                value = null;
             }
 
             property.SetValue(entity, value);

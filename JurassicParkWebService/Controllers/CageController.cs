@@ -37,7 +37,7 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
         return StatusCode(200, resources);
     }
 
-    [HttpGet("{id:int}/dinosaurs")]
+    [HttpGet("{id:int}/dinosaur")]
     public IActionResult GetDinosaurs(int id) {
         if (_cageStore.Get(id) == null) {
             return StatusCode(404, "Cage not found.");
@@ -49,7 +49,7 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
         return StatusCode(200, resources);
     }
 
-    [HttpPut("{cageId:int}/dinosaurs/{dinosaurId:int}")]
+    [HttpPut("{cageId:int}/dinosaur/{dinosaurId:int}")]
     public IActionResult AddDinosaur(int cageId, int dinosaurId) {
         var cage = _cageStore.Get(cageId);
         if (cage == null) {
@@ -61,12 +61,21 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
             return StatusCode(404, "Dinosaur not found.");
         }
 
+        if (cage.PowerStatus == CagePowerStatus.Down) {
+            return StatusCode(400, "Dinosaur cannot be added if PowerStatus is 'down'.");
+        }
+
         var species = _speciesStore.Get(dinosaur.SpeciesId);
 
         if (dinosaur.CageId != cageId) {
             var searchForCarnivoresInCage = species!.SpeciesType != SpeciesType.Carnivore;
             if (_dinosaurStore.Search(cageId: cageId, isCarnivore: searchForCarnivoresInCage).Any()) {
                 return StatusCode(400, "Cannot put a carnivore and a herbivore in the same cage.");
+            }
+
+            var dinosaursInCage = _dinosaurStore.Search(cageId: cageId).Count;
+            if (dinosaursInCage >= cage.MaxCapacity) {
+                return StatusCode(400, "Dinosaur cannot cage is at MaxCapacity.");
             }
 
             dinosaur.CageId = cageId;
@@ -76,7 +85,7 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
         return StatusCode(200, new OutboundDinosaurResource(dinosaur, species!));
     }
 
-    [HttpDelete("{cageId:int}/dinosaurs/{dinosaurId:int}")]
+    [HttpDelete("{cageId:int}/dinosaur/{dinosaurId:int}")]
     public IActionResult RemoveDinosaur(int cageId, int dinosaurId) {
         var cage = _cageStore.Get(cageId);
         if (cage == null) {

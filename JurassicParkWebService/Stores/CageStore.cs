@@ -11,7 +11,7 @@ internal sealed class CageStore : Store<Cage>, ICageStore {
     public CageStore(IDatabaseConfiguration databaseConfiguration) : base(databaseConfiguration) { }
 
     public IList<Cage> Search(string? name, CagePowerStatus? powerStatus) {
-        var searchParameters = new Dictionary<string, string>();
+        var searchParameters = new Dictionary<string, object>();
         if (!string.IsNullOrEmpty(name)) {
             searchParameters.Add("name", name);
         }

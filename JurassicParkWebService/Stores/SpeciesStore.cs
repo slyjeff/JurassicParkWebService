@@ -12,7 +12,7 @@ internal sealed class SpeciesStore : Store<Species>, ISpeciesStore {
     public SpeciesStore(IDatabaseConfiguration databaseConfiguration) : base(databaseConfiguration) { }
 
     public IList<Species> Search(string? name = null) {
-        var searchParameters  = new Dictionary<string, string>();
+        var searchParameters  = new Dictionary<string, object>();
         if (!string.IsNullOrEmpty(name)) {
             searchParameters.Add("name", name);
         }

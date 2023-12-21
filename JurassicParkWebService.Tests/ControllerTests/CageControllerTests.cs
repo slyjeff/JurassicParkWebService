@@ -651,9 +651,33 @@ public sealed class CageControllerTests {
     }
 
     [TestMethod]
+    public void AddDinosaurMustReturnErrorIfPowerStatusIsDown() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        cage.PowerStatus = CagePowerStatus.Down;
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var species = GenerateRandom.Species();
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+
+        var dinosaur = GenerateRandom.Dinosaur();
+        dinosaur.SpeciesId = species.Id;
+        _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
+
+        //act
+        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("Dinosaur cannot be added if PowerStatus is 'down'.", result.Value);
+    }
+
+    [TestMethod]
     public void AddDinosaurMustReturnSuccessIfAlreadyInCage() {
         //arrange
         var cage = GenerateRandom.Cage();
+        cage.PowerStatus = CagePowerStatus.Active;
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         var species = GenerateRandom.Species();
@@ -679,6 +703,7 @@ public sealed class CageControllerTests {
     public void AddDinosaurMustUpdateIfNotAlreadyInCage() {
         //arrange
         var cage = GenerateRandom.Cage();
+        cage.PowerStatus = CagePowerStatus.Active;
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         var species = GenerateRandom.Species();
@@ -700,9 +725,36 @@ public sealed class CageControllerTests {
     }
 
     [TestMethod]
+    public void AddDinosaurMustReturnErrorIfAddingWouldExceedMaxCapacity() {
+        //arrange
+        var cage = GenerateRandom.Cage();
+        cage.PowerStatus = CagePowerStatus.Active;
+        cage.MaxCapacity = 1;
+        _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var species = GenerateRandom.Species();
+        _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
+
+        var dinosaur = GenerateRandom.Dinosaur();
+        dinosaur.SpeciesId = species.Id;
+        _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
+
+        _mockDinosaurStore.Setup(x => x.Search(null, null, cage.Id, null)).Returns(new List<Dinosaur> { new() });
+
+        //act
+        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as ObjectResult;
+
+        //arrange
+        Assert.IsNotNull(result);
+        Assert.AreEqual(400, result.StatusCode);
+        Assert.AreEqual("Dinosaur cannot cage is at MaxCapacity.", result.Value);
+    }
+
+    [TestMethod]
     public void AddCarnivoreMustReturnErrorIfHerbivoreAlreadyInCage() {
         //arrange
         var cage = GenerateRandom.Cage();
+        cage.PowerStatus = CagePowerStatus.Active;
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         var species = GenerateRandom.Species();
@@ -730,6 +782,7 @@ public sealed class CageControllerTests {
     public void AddHerbivoreMustReturnErrorIfCarnivoreAlreadyInCage() {
         //arrange
         var cage = GenerateRandom.Cage();
+        cage.PowerStatus = CagePowerStatus.Active;
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
         var species = GenerateRandom.Species();

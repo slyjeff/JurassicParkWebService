@@ -5,7 +5,7 @@ BEGIN
 	CREATE TABLE Species (
 		Id          int          IDENTITY(1,1) PRIMARY KEY,
 		Name        varchar(MAX) NOT NULL,
-		SpeciesType varchar(9)   NOT NULL,
+		SpeciesType varchar(9)   NOT NULL
 	);
 
 	insert into Species(Name, SpeciesType) values ('Tyrannosaurus', 'Carnivore');
@@ -26,5 +26,18 @@ BEGIN
 		Name        varchar(MAX) NOT NULL,
 		MaxCapacity int          NOT NULL,
 		PowerStatus varchar(6)   NOT NULL
+	);
+END
+
+IF (NOT EXISTS (SELECT 0 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Dinosaur'))
+BEGIN
+	CREATE TABLE Dinosaur (
+		Id          int          IDENTITY(1,1) PRIMARY KEY,
+		Name        varchar(MAX) NOT NULL,
+		SpeciesId   int          NOT NULL,
+		CageId      int          NULL,
+		
+		CONSTRAINT FK_Dinosaur_Species FOREIGN KEY (SpeciesId) REFERENCES Species (Id),
+		CONSTRAINT FK_Dinosaur_Species FOREIGN KEY (SpeciesId) REFERENCES Species (Id),
 	);
 END
