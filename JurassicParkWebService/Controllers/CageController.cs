@@ -75,14 +75,14 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
 
             var dinosaursInCage = _dinosaurStore.Search(cageId: cageId).Count;
             if (dinosaursInCage >= cage.MaxCapacity) {
-                return StatusCode(400, "Dinosaur cannot cage is at MaxCapacity.");
+                return StatusCode(400, "Cannot add dinosaur if cage is at MaxCapacity.");
             }
 
             dinosaur.CageId = cageId;
             _dinosaurStore.Update(dinosaur);
         }
 
-        return StatusCode(200, new OutboundDinosaurResource(dinosaur, species!));
+        return StatusCode(200);
     }
 
     [HttpDelete("{cageId:int}/dinosaur/{dinosaurId:int}")]

@@ -689,14 +689,13 @@ public sealed class CageControllerTests {
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
 
         //act
-        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as ObjectResult;
+        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as StatusCodeResult;
 
         //arrange
         _mockDinosaurStore.Verify(x => x.Update(It.IsAny<Dinosaur>()), Times.Never);
 
         Assert.IsNotNull(result);
         Assert.AreEqual(200, result.StatusCode);
-        Assert.IsTrue(dinosaur.EqualsResource(result.Value as OutboundDinosaurResource, species));
     }
 
     [TestMethod]
@@ -714,14 +713,13 @@ public sealed class CageControllerTests {
         _mockDinosaurStore.Setup(x => x.Get(dinosaur.Id)).Returns(dinosaur);
 
         //act
-        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as ObjectResult;
+        var result = _cageController.AddDinosaur(cage.Id, dinosaur.Id) as StatusCodeResult;
 
         //arrange
         _mockDinosaurStore.Verify(x => x.Update(It.Is<Dinosaur>(y => y == dinosaur && dinosaur.CageId == cage.Id)), Times.Once);
 
         Assert.IsNotNull(result);
         Assert.AreEqual(200, result.StatusCode);
-        Assert.IsTrue(dinosaur.EqualsResource(result.Value as OutboundDinosaurResource, species));
     }
 
     [TestMethod]
@@ -747,7 +745,7 @@ public sealed class CageControllerTests {
         //arrange
         Assert.IsNotNull(result);
         Assert.AreEqual(400, result.StatusCode);
-        Assert.AreEqual("Dinosaur cannot cage is at MaxCapacity.", result.Value);
+        Assert.AreEqual("Cannot add dinosaur if cage is at MaxCapacity.", result.Value);
     }
 
     [TestMethod]
