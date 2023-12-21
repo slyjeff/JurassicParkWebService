@@ -2,8 +2,7 @@
 
 public enum CagePowerStatus { Active, Down }
 
-public sealed class Cage {
-    public int Id { get; set; }
+public sealed class Cage : IdentifiableEntity {
     public string Name { get; set; } = string.Empty;
     public int MaxCapacity { get; set; }
     public CagePowerStatus PowerStatus { get; set; } = CagePowerStatus.Active;

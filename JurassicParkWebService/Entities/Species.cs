@@ -2,8 +2,7 @@
 
 public enum SpeciesType { Carnivore, Herbivore }
 
-public sealed class Species {
-    public int Id { get; set; }
+public sealed class Species : IdentifiableEntity {
     public string Name { get; set; } = string.Empty;
     public SpeciesType SpeciesType { get; set; } = SpeciesType.Carnivore;
 

@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using JurassicParkWebService.Entities;
+using Microsoft.AspNetCore.Mvc;
 using JurassicParkWebService.Stores;
 
 namespace JurassicParkWebService.Controllers; 
 
-public abstract class EntityController<TEntity, TInboundResource, TOutboundResource> : ControllerBase where TEntity : class {
+public abstract class EntityController<TEntity, TInboundResource, TOutboundResource> : ControllerBase where TEntity : IdentifiableEntity {
     private readonly IStore<TEntity> _store;
     private readonly string _entityName;
 

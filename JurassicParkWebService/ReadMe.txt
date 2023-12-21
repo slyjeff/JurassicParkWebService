@@ -13,8 +13,10 @@ if we are searching on it and returning the value as part of the Cage, that wasn
 be a discussion to consider the pros and cons.
 
 I do not have unit tests around the database logic. These would more properly be considered "integration tests" and my experience is that
-if the database layer is well seperated, it is better not to use unit tests for automation, as they have extenral dependencies. Additionally,
-Usually in C# I'd use NHibernate or another ORM rather than ADO.
+if the database layer is well seperated, it is better not to use unit tests for automation, as they have extenral dependencies.
+
+In C# I'd use NHibernate or another ORM rather than ADO. I'm sure there's a better way than what I did, but this was just a quick way
+to roll some generic database logic
 
 On create, power status is not passed in- I am intentionally setting it to active. Without it being specified in the requeirements, I made
 a judgement called, but I wanted to note that this intentional (that is, passing in a value will be ignored).
@@ -27,6 +29,7 @@ in cages no longer meeting the Carnivore/Herbivore requirements. In real life, t
 
 
 Things to Add:
+*Add max length and validation for varchar/string values
 *Exception catching/error handling
 *Versioning on database objects for concurrecy
 *Authorization/Authentication

@@ -1,5 +1,6 @@
 ﻿using JurassicParkWebService.Entities;
 using System.Collections.Generic;
+using Microsoft.Data.SqlClient;
 
 namespace JurassicParkWebService.Stores;
 
@@ -8,6 +9,8 @@ public interface IDinosaurStore : IStore<Dinosaur> {
 }
 
 internal sealed class DinosaurStore : Store<Dinosaur>, IDinosaurStore {
+    public DinosaurStore(IDatabaseConfiguration databaseConfiguration) : base(databaseConfiguration) { }
+
     public IList<Dinosaur> Search(string? name, int? speciesId, int? cageId, bool? isCarnivore = null) {
         return new List<Dinosaur>();
     }

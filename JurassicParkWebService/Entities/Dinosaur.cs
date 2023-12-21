@@ -1,7 +1,6 @@
 ﻿namespace JurassicParkWebService.Entities; 
 
-public sealed class Dinosaur {
-    public int Id { get; set; }
+public sealed class Dinosaur : IdentifiableEntity {
     public string Name { get; set; } = string.Empty;
     public int SpeciesId { get; set; }
     public int? CageId { get; set; }
