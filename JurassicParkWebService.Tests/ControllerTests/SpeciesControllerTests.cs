@@ -204,7 +204,7 @@ public sealed class SpeciesControllerTests {
         var dinosaursWithSpecies = new List<Dinosaur> { new(), new() };
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
-        _mockDinosaurStore.Setup(x => x.Search(null, species.Id)).Returns(dinosaursWithSpecies);
+        _mockDinosaurStore.Setup(x => x.Search(null, species.Id, null)).Returns(dinosaursWithSpecies);
 
         //act
         var result = _speciesController.Delete(species.Id) as ObjectResult;
@@ -223,7 +223,7 @@ public sealed class SpeciesControllerTests {
         var species = GenerateRandomSpecies();
 
         _mockSpeciesStore.Setup(x => x.Get(species.Id)).Returns(species);
-        _mockDinosaurStore.Setup(x => x.Search(null, species.Id)).Returns(new List<Dinosaur>());
+        _mockDinosaurStore.Setup(x => x.Search(null, species.Id, null)).Returns(new List<Dinosaur>());
 
         //act
         var result = _speciesController.Delete(species.Id) as StatusCodeResult;

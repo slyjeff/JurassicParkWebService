@@ -65,7 +65,7 @@ public sealed class SpeciesController : EntityController<Species, InboundSpecies
     }
 
     protected override string? ValidateDeleteEntity(Species speciesToDelete) {
-        if (_dinosaurStore.Search(name: null, speciesToDelete.Id).Any()) {
+        if (_dinosaurStore.Search(name: null, speciesToDelete.Id, cageId: null).Any()) {
             return "Cannot delete while Dinosaurs of this species exist.";
         }
 

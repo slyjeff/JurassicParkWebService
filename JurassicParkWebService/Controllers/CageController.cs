@@ -11,9 +11,11 @@ namespace JurassicParkWebService.Controllers;
 [Route("[controller]")]
 public sealed class CageController : EntityController<Cage, InboundCageResource, OutboundCageResource> {
     private readonly ICageStore _cageStore;
+    private readonly IDinosaurStore _dinosaurStore;
 
-    public CageController(ICageStore cageStore) : base(cageStore) {
+    public CageController(ICageStore cageStore, IDinosaurStore dinosaurStore) : base(cageStore) {
         _cageStore = cageStore;
+        _dinosaurStore = dinosaurStore;
     }
 
     [HttpGet]
@@ -27,7 +29,8 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
             powerStatusValue = parsedPowerStatusValue;
         }
 
-        var resources = _cageStore.Search(cageName, powerStatusValue).Select(x => new OutboundCageResource(x));
+        var cages = _cageStore.Search(cageName, powerStatusValue);
+        var resources = cages.Select(CreateOutboundResource);
 
         return StatusCode(200, resources);
     }
@@ -46,7 +49,7 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
     }
 
     protected override OutboundCageResource CreateOutboundResource(Cage cage) {
-        return new OutboundCageResource(cage);
+        return new OutboundCageResource(cage, GetDinosaurCount(cage));
     }
 
     protected override string? ValidateInboundEntity(InboundCageResource inboundCageResource, Cage? cageToUpdate = null) {
@@ -72,7 +75,8 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
         }
 
         //this is validation that only applies to updates
-        if (inboundCageResource.MaxCapacity < cageToUpdate.DinosaurCount) {
+        var dinosaurCount = GetDinosaurCount(cageToUpdate);
+        if (inboundCageResource.MaxCapacity < dinosaurCount) {
             return "MaxCapacity must be higher than DinosaurCount.";
         }
 
@@ -84,7 +88,7 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
             return "PowerStatus must be 'active' or 'down'.";
         }
 
-        if (powerStatus == CagePowerStatus.Down && cageToUpdate.DinosaurCount > 0) {
+        if (powerStatus == CagePowerStatus.Down && dinosaurCount > 0) {
             return "PowerStatus cannot be set to 'down' when DinosaurCount > 0.";
         }
 
@@ -92,10 +96,14 @@ public sealed class CageController : EntityController<Cage, InboundCageResource,
     }
 
     protected override string? ValidateDeleteEntity(Cage cageToDelete) {
-        if (cageToDelete.DinosaurCount > 0) {
+        if (GetDinosaurCount(cageToDelete) > 0) {
             return "Cannot delete cage if DinosaurCount > 0.";
         }
 
         return null;
+    }
+
+    private int GetDinosaurCount(Cage cage) {
+        return _dinosaurStore.Search(name: null, speciesId: null, cageId: cage.Id).Count;
     }
 }

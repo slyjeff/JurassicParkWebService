@@ -14,7 +14,6 @@ internal static class ComparisonExtensions {
         return cage.Id == cageResource.Id
             && cage.Name == cageResource.Name
             && cage.MaxCapacity == cageResource.MaxCapacity
-            && cage.DinosaurCount == cageResource.DinosaurCount
             && cage.PowerStatus.ToString() == cageResource.PowerStatus;
     }
 

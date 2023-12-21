@@ -6,7 +6,6 @@ public sealed class Cage {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public int MaxCapacity { get; set; }
-    public int DinosaurCount { get; set; } //todo: DinosaurCount should be read-only, determined when loading from the database
     public CagePowerStatus PowerStatus { get; set; } = CagePowerStatus.Active;
 
     public override bool Equals(object? obj) {
@@ -17,7 +16,6 @@ public sealed class Cage {
         return Id == cage.Id
             && Name == cage.Name
             && MaxCapacity == cage.MaxCapacity
-            && DinosaurCount == cage.DinosaurCount
             && PowerStatus == cage.PowerStatus;
     }
 }

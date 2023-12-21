@@ -14,6 +14,7 @@ namespace JurassicParkWebService.Tests.ControllerTests;
 [TestClass]
 public sealed class CageControllerTests {
     private Mock<ICageStore> _mockCageStore = null!;
+    private Mock<IDinosaurStore> _mockDinosaurStore = null!;
     private CageController _cageController = null!;
 
     [TestInitialize]
@@ -21,7 +22,10 @@ public sealed class CageControllerTests {
         _mockCageStore = new Mock<ICageStore>();
         _mockCageStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<CagePowerStatus?>())).Returns(new List<Cage>( ));
 
-        _cageController = new CageController(_mockCageStore.Object);
+        _mockDinosaurStore = new Mock<IDinosaurStore>();
+        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), It.IsAny<int?>())).Returns(new List<Dinosaur>());
+
+        _cageController = new CageController(_mockCageStore.Object, _mockDinosaurStore.Object);
     }
 
     #region Add
@@ -47,7 +51,6 @@ public sealed class CageControllerTests {
             Id = randomGeneratedId,
             Name = cageName,
             MaxCapacity = maxCapacity,
-            DinosaurCount = 0,
             PowerStatus = CagePowerStatus.Active
         };
 
@@ -200,9 +203,12 @@ public sealed class CageControllerTests {
     public void DeleteMustReturnErrorIfDinosaurCountIsGreaterThanZero() {
         //arrange
         var cage = GenerateRandomCage();
-        cage.DinosaurCount = 1;
+        cage.PowerStatus = CagePowerStatus.Active;
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        var dinosaursInCage = new List<Dinosaur> { new() };
+        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id)).Returns(dinosaursInCage);
 
         //act
         var result = _cageController.Delete(cage.Id) as ObjectResult;
@@ -219,7 +225,6 @@ public sealed class CageControllerTests {
     public void GetMustCallStore() {
         //arrange
         var cage = GenerateRandomCage();
-        cage.DinosaurCount = 0;
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -385,10 +390,14 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustReturnErrorIfMaxCapacityIsSetBelowDinosaurCount() {
         var cage = GenerateRandomCage();
-        cage.DinosaurCount = GenerateRandom.Int(2, 5);
-        var maxCapacity = cage.DinosaurCount - 1;
+        cage.PowerStatus = CagePowerStatus.Active;
+        cage.MaxCapacity = 10;
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
+
+        const int maxCapacity = 2;
+        var dinosaursInCage = new List<Dinosaur> { new(), new(), new() };
+        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id)).Returns(dinosaursInCage);
 
         //act
         var inboundResource = new InboundCageResource {
@@ -450,8 +459,11 @@ public sealed class CageControllerTests {
     public void UpdateMustReturnErrorIfPowerStatusIsSetToDownWithDinosaursInCage() {
         //arrange
         var cage = GenerateRandomCage();
+        cage.PowerStatus = CagePowerStatus.Active;
         cage.MaxCapacity = 2;
-        cage.DinosaurCount = 1;
+
+        var dinosaursInCage = new List<Dinosaur> { new() };
+        _mockDinosaurStore.Setup(x => x.Search(It.IsAny<string?>(), It.IsAny<int?>(), cage.Id)).Returns(dinosaursInCage);
 
         _mockCageStore.Setup(x => x.Get(cage.Id)).Returns(cage);
 
@@ -472,7 +484,6 @@ public sealed class CageControllerTests {
     [TestMethod]
     public void UpdateMustSaveNewValues() {
         var cage = GenerateRandomCage();
-        cage.DinosaurCount = 0; //if DinosaurCount isn't zero, setting the PowerStatus to 'down' will return a validation error
         cage.PowerStatus = GenerateRandom.Int(0, 1) == 1 ? CagePowerStatus.Active : CagePowerStatus.Down;
         
         //the new values must be different from the existing values so we can detect changes
@@ -560,13 +571,11 @@ public sealed class CageControllerTests {
     private static Cage GenerateRandomCage() {
         var maxCapacity = GenerateRandom.Int(1, 10);
         var powerStatus = GenerateRandom.Int(0, 1) == 1 ? CagePowerStatus.Active : CagePowerStatus.Down;
-        var dinosaurCount = powerStatus == CagePowerStatus.Active ? GenerateRandom.Int(0, maxCapacity) : 0;
 
         return new Cage {
             Id = GenerateRandom.Int(),
             Name = GenerateRandom.String(),
             MaxCapacity = maxCapacity,
-            DinosaurCount = dinosaurCount,
             PowerStatus = powerStatus
         };
     }

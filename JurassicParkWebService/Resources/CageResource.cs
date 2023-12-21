@@ -3,11 +3,11 @@
 namespace JurassicParkWebService.Resources; 
 
 public sealed class OutboundCageResource {
-    public OutboundCageResource(Cage sourceCage) {
+    public OutboundCageResource(Cage sourceCage, int dinosaurCount) {
         Id = sourceCage.Id;
         Name = sourceCage.Name;
         MaxCapacity = sourceCage.MaxCapacity;
-        DinosaurCount = sourceCage.DinosaurCount;
+        DinosaurCount = dinosaurCount;
         PowerStatus = sourceCage.PowerStatus.ToString();
     }
 
