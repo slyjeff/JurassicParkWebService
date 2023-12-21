@@ -4,7 +4,7 @@ The assignment was to create a REST service, but did not mention HATEOAS (Roy Fi
 I assumed HATEOAS was out of scope, though I'd have liked add it. I settled for simply returning accepting and returning resources
 I do have a C# library that supports HATEOAS, but decided that using it for this project might be too much: https://github.com/slyjeff/RestResource
 
-Once consequence of not using HATEOAS is that the resources need to contain IDs so clients know how to interact with them.
+One consequence of not using HATEOAS is that the resources need to contain IDs so clients know how to interact with them.
 In a HATEOAS implementation, the links would be provided so the client is unaware of resource ids. In either case, I do not consider ID
 as part of the resource itself and am not including it in PUT operations since it is available in the URL.
 
