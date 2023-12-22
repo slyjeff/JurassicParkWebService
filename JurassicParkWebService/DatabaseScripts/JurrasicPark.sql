@@ -38,6 +38,6 @@ BEGIN
 		CageId      int          NULL,
 		
 		CONSTRAINT FK_Dinosaur_Species FOREIGN KEY (SpeciesId) REFERENCES Species (Id),
-		CONSTRAINT FK_Dinosaur_Species FOREIGN KEY (SpeciesId) REFERENCES Species (Id),
+		CONSTRAINT FK_Dinosaur_Cage    FOREIGN KEY (CageId)    REFERENCES Cage    (Id),
 	);
 END
